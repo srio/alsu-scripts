@@ -53,7 +53,7 @@ def solve_grating_equation(line_density=100000,wavelength=10e-10,c=1.10,order=1,
         sinalpha1 = (-B + numpy.sqrt(Delta)) / 2 / A
         sinalpha2 = (-B - numpy.sqrt(Delta)) / 2 / A
 
-        # print("Discriminant=%f, sinalpha1=%f, sinalpha2=%f" % (Delta, sinalpha1, sinalpha2))
+        print("Discriminant=%f, sinalpha1=%f, sinalpha2=%f" % (Delta, sinalpha1, sinalpha2))
 
         if numpy.abs(sinalpha1) <= 1:
             sinalpha = sinalpha1
@@ -159,35 +159,34 @@ def reflectivity(descriptor,energy,theta,density=None,rough=0.0):
 
     return rs*debyewaller,rp*debyewaller,runp*debyewaller
 
-def structure_factor(alpha,beta,gamma,wavelength,dspacing):
-    b = dspacing * numpy.sin(alpha) / numpy.sin(alpha + gamma)
-    x = (numpy.pi / b / wavelength) * ( numpy.cos(alpha + gamma) - numpy.cos(beta - gamma) )
-    S = numpy.sin( x ) / x
-    return S
+def structure_factor(lamda,gamma_blaze,alpha,beta,d):
+    gamma_blaze_deg = gamma_blaze * 180.0 / numpy.pi
+    alphadash = 90 - alpha * 180 / numpy.pi
+    betadash = 90 + beta * 180 / numpy.pi
+    b = d * (numpy.sin(numpy.pi / 180 * alphadash) / numpy.sin(numpy.pi / 180 * (alphadash + gamma_blaze_deg)))
+    factor1 = numpy.pi * b / lamda
+    factor2 = numpy.cos(numpy.pi / 180 * (alphadash + gamma_blaze_deg)) - numpy.cos(numpy.pi / 180 * (betadash - gamma_blaze_deg))
+    factor3 = factor1 * factor2
+    s = (numpy.sin(factor3)) / factor3
+    return s
 
 if __name__ == "__main__":
     from srxraylib.plot.gol import plot
 
-    energy = numpy.linspace(200,4000,300)
-
+    # inputs
+    energy = numpy.linspace(250,4000,300)
+    g_inv_mm = 150.0
+    C = 1.245
+    # gamma_blaze = 0.20 * numpy.pi / 180
+    energy_blaze = 800.0
 
     #
     wavelength = codata.h * codata.c / codata.e / energy
-    # print("wavelengt: ",wavelength*1e10)
-
-
-    #
     # grating
-    #
-    g_inv_mm = 150.0
     g_inv_m = g_inv_mm * 1e3
     dspacing = (1.0 / g_inv_m)
 
     print("dspacing: %f A "%(1e10*dspacing))
-    # gamma = 0.22 * numpy.pi / 180.0
-    # deflection_angle_deg = 3.0
-
-    C = 1.245
 
     alpha = numpy.zeros_like(wavelength)
     beta = numpy.zeros_like(wavelength)
@@ -200,53 +199,39 @@ if __name__ == "__main__":
     theta = (alpha - beta) / 2
 
 
-
-    # grating  n lambda = 0.5 * dspacing (theta**2 - phi**2)
-
-    # theta = 0.5 * (alpha - beta)  # half-include
-    # gamma = 0.5 * (alpha + beta)  # blaze
-
-
-    # alpha = numpy.sqrt( wavelength/2/dspacing * (C+1) / (C-1))
-
-    # beta = 2 * gamma - alpha
-
-    # beta = numpy.arcsin(wavelength / dspacing - alpha)
-
-
-    plot(energy,alpha*180/numpy.pi,
-         energy, -beta * 180 / numpy.pi,
-         energy, (alpha-beta) / 2 * 180 / numpy.pi,
-         xtitle="energy / eV", ytitle="deg", legend=["alpha","-beta","theta"])
-
-
+    # plot(energy,alpha*180/numpy.pi,
+    #      energy, -beta * 180 / numpy.pi,
+    #      energy, (alpha-beta) / 2 * 180 / numpy.pi,
+    #      xtitle="energy / eV", ytitle="deg", legend=["alpha","-beta","theta"])
 
     RS = numpy.zeros_like(energy)
 
     theta = 0.5 * (alpha - beta)
+    gamma = 0.5 * (alpha + beta)
 
+    gamma_blaze = numpy.interp(energy_blaze,energy,gamma)
+    print(">>>> using blaze angle: %f deg "%(gamma_blaze*180/numpy.pi))
+
+    #
+    # reflectivity
+    #
     for i in range(energy.size):
         rs, rp, runp = reflectivity("Au", numpy.array([energy[i]]), numpy.pi / 2 - theta[i], )
-        # print(">>> rs: ",rs,rs.shape)
         RS[i] = rs[0]
+    # plot(energy, RS, xlog=True, xtitle="energy / eV",ytitle="R(theta)")
 
-    plot(energy, RS, xlog=True, xtitle="energy / eV",ytitle="R(theta)")
+    #
+    # efficiency
+    #
 
     efficiency = RS / C
 
-    # plot(energy, efficiency, xlog=True, xtitle="energy / eV", ytitle="Eff")
+    sf = structure_factor(wavelength,gamma_blaze,alpha,beta,dspacing)
 
-    gamma = 0.5 * (alpha + beta)
-    sf = structure_factor(numpy.pi / 2 - alpha,
-                          numpy.pi / 2 - beta,
-                          gamma,wavelength,dspacing)
+    efficiency *= sf**2
 
-    plot(energy, sf, xlog=True, xtitle="energy / eV", ytitle="S")
+    # plot(energy, sf**2, xlog=True, xtitle="energy / eV", ytitle="S")
 
-    # theta = 2 * deflection_angle_deg
-    # gamma = blaze_angle_deg
-    # alpha = theta + gamma
-
-
+    plot(energy,efficiency,xlog=True,title='C = %f , N = %d l/mm '%(C,g_inv_mm),xtitle="Phonon energy [eV]",ytitle="Efficiency" )
 
 
