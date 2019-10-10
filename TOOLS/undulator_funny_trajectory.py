@@ -279,6 +279,10 @@ def gaussian_fit_scan(simulation_test0,shift_min=-5e-2,shift_max=5e-2,shift_n=5,
 
 
 if __name__ == "__main__":
+    from srxraylib.plot.gol import set_qt
+
+    set_qt()
+
     #
     # print("======================================================================")
     # print("======      Undulator from X-ray data booklet                  =======")

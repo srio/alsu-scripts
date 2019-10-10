@@ -1,7 +1,8 @@
 import numpy
-from srxraylib.plot.gol import plot
+from srxraylib.plot.gol import plot, set_qt
 from scipy.ndimage import gaussian_filter1d
 
+set_qt()
 
 L = 1605.0 #mm
 
@@ -24,7 +25,7 @@ B2 = gaussian_filter1d(B, 2.5)
 y -= y[y.size//2]
 y *= 1e-3
 
-plot(y, B, y, B2)
+plot(y, B, y, B2, legend=["original","smoothed"],xtitle="y / m",ytitle="B / T")
 
 f = open("BM_multi.b", "w")
 for i in range(y.size):
