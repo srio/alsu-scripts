@@ -40,7 +40,7 @@ def run_shadow(incidence=67.7):
     oe0.HDIV2 = 0.035
     oe0.ISTAR1 = 5676561
     oe0.NCOL = 0
-    oe0.NPOINT = 300000
+    oe0.NPOINT = 30000
     oe0.N_COLOR = 0
     oe0.PH1 = 0.4
     oe0.PH2 = 0.401
@@ -136,7 +136,7 @@ if __name__ == "__main__":
 
     set_qt()
 
-    Grazing = numpy.linspace(15, 30.0, 151)
+    Grazing = numpy.linspace(15, 30.0, 5) #151)
 
     Radius = numpy.zeros_like(Grazing)
     Fwhm = numpy.zeros_like(Grazing)
@@ -144,7 +144,7 @@ if __name__ == "__main__":
 
     import h5py
     print(">>>>>>>>>>>>>>>>>>>>",h5py.version.version)
-    h = H5SimpleWriter.initialize_file("ir_scan.h5")
+    h = H5SimpleWriter.initialize_file("IR_BM_shadow3_scan.h5")
     Incidence = 90.0 - Grazing
     
     for i,incidence in enumerate(Incidence):
