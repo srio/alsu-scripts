@@ -3,7 +3,133 @@
 #
 import Shadow
 import numpy
+def run_bm(incidence=45.0,radius=1.0,onlysource=False):
+    #
+    # Python script to run shadow3. Created automatically with ShadowTools.make_python_script_from_list().
+    #
+    import Shadow
+    import numpy
 
+    # write (1) or not (0) SHADOW files start.xx end.xx star.xx
+    iwrite = 0
+
+    #
+    # initialize shadow3 source (oe0) and beam
+    #
+    beam = Shadow.Beam()
+    oe0 = Shadow.Source()
+    oe1 = Shadow.OE()
+    oe2 = Shadow.OE()
+
+    #
+    # Define variables. See meaning of variables in:
+    #  https://raw.githubusercontent.com/srio/shadow3/master/docs/source.nml
+    #  https://raw.githubusercontent.com/srio/shadow3/master/docs/oe.nml
+    #
+
+    oe0.BENER = 1.9
+    oe0.EPSI_X = 1.989e-09
+    oe0.EPSI_Z = 3.007e-11
+    oe0.FDISTR = 6
+    oe0.FSOURCE_DEPTH = 4
+    oe0.F_COLOR = 3
+    oe0.F_PHOT = 0
+    oe0.HDIV1 = 0.033
+    oe0.HDIV2 = 0.033
+    oe0.ISTAR1 = 5676561
+    oe0.NCOL = 0
+    oe0.NPOINT = 30000
+    oe0.N_COLOR = 0
+    oe0.PH1 = 0.4
+    oe0.PH2 = 0.401
+    oe0.POL_DEG = 0.0
+    oe0.R_ALADDIN = -7.234837681238457
+    oe0.R_MAGNET = -7.234837681238457
+    oe0.SIGDIX = 0.0
+    oe0.SIGDIZ = 0.0
+    oe0.SIGMAX = 3.9e-05
+    oe0.SIGMAY = 0.0
+    oe0.SIGMAZ = 3.1e-05
+    oe0.VDIV1 = 0.05
+    oe0.VDIV2 = 0.05
+    oe0.WXSOU = 0.0
+    oe0.WYSOU = 0.0
+    oe0.WZSOU = 0.0
+
+    oe1.ALPHA = 90.0
+    oe1.DUMMY = 100.0
+    oe1.FCYL = 1
+    oe1.FMIRR = 1
+    oe1.FWRITE = 1
+    oe1.F_EXT = 1
+    oe1.RMIRR = radius
+    oe1.T_IMAGE = 0.0
+    oe1.T_INCIDENCE = incidence
+    oe1.T_REFLECTION = incidence
+    oe1.T_SOURCE = 1.58
+
+    oe2.ALPHA = 90.0
+    oe2.DUMMY = 100.0
+    oe2.FCYL = 1
+    oe2.FMIRR = 1
+    oe2.FWRITE = 1
+    oe2.F_DEFAULT = 0
+    oe2.SIMAG = 3.11 +0.477726
+    oe2.SSOUR = 2.76
+    oe2.THETA = 45.0
+    oe2.T_IMAGE = 3.11
+    oe2.T_INCIDENCE = 45.0
+    oe2.T_REFLECTION = 45.0
+    oe2.T_SOURCE = 1.18
+
+    # Run SHADOW to create the source
+
+    if iwrite:
+        oe0.write("start.00")
+
+    beam.genSource(oe0)
+
+    beam.rays[:, 1] += -0.477726
+
+    if onlysource:
+        return beam,oe1
+    # print(">>>>>>>>><<<<<<<<<<<", beam.rays[:, 1])
+
+    if iwrite:
+        oe0.write("end.00")
+        beam.write("begin.dat")
+
+    #
+    # run optical element 1
+    #
+    print("    Running optical element: %d" % (1))
+    if iwrite:
+        oe1.write("start.01")
+
+    beam.traceOE(oe1, 1)
+
+    if iwrite:
+        oe1.write("end.01")
+        beam.write("star.01")
+
+    #
+    # run optical element 2
+    #
+    print("    Running optical element: %d" % (2))
+    if iwrite:
+        oe2.write("start.02")
+
+    beam.traceOE(oe2, 2)
+
+    if iwrite:
+        oe2.write("end.02")
+        beam.write("star.02")
+
+    # Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=101, nolost=1, title="Real space")
+    # Shadow.ShadowTools.plotxy(beam,1,4,nbins=101,nolost=1,title="Phase space X")
+    # Shadow.ShadowTools.plotxy(beam,3,6,nbins=101,nolost=1,title="Phase space Z")
+
+    return beam,oe1
 
 def run_preprocessor():
     #
@@ -56,7 +182,8 @@ def run_preprocessor():
     #
 
 
-def run_shadow(source=True, obscure=3, trace=True, beam=None, p_shift=0.0, incidence=39.9):
+def run_shadow(source=True, obscure=3, trace=True, beam=None,
+               p_shift=0.0, incidence=39.9, X_ROT=0.0, radius=3.579513):
     #
     # Python script to run shadow3. Created automatically with ShadowTools.make_python_script_from_list().
     #
@@ -73,6 +200,7 @@ def run_shadow(source=True, obscure=3, trace=True, beam=None, p_shift=0.0, incid
     oe0 = Shadow.Source()
     oe1 = Shadow.OE()
     oe2 = Shadow.OE()
+
 
     #
     # Define variables. See meaning of variables in:
@@ -117,21 +245,14 @@ def run_shadow(source=True, obscure=3, trace=True, beam=None, p_shift=0.0, incid
     oe1.ALPHA = 90.0
     oe1.DUMMY = 100.0
     oe1.FCYL = 1
-    oe1.FHIT_C = 1
     oe1.FMIRR = 1
     oe1.FWRITE = 1
-    oe1.F_DEFAULT = 0
-    oe1.RLEN1 = 0.3
-    oe1.RLEN2 = 0.4
-    oe1.RWIDX1 = 0.65
-    oe1.RWIDX2 = 0.65
-    oe1.SIMAG = 4.29
-    oe1.THETA = 39.0
+    oe1.F_EXT = 1
+    oe1.RMIRR = radius
     oe1.T_IMAGE = 0.0
     oe1.T_INCIDENCE = incidence
     oe1.T_REFLECTION = incidence
     oe1.T_SOURCE = 1.58
-    oe1.SSOUR = oe1.T_SOURCE - p_shift
 
     oe2.ALPHA = 90.0
     oe2.DUMMY = 100.0
@@ -139,7 +260,7 @@ def run_shadow(source=True, obscure=3, trace=True, beam=None, p_shift=0.0, incid
     oe2.FMIRR = 1
     oe2.FWRITE = 1
     oe2.F_DEFAULT = 0
-    oe2.SIMAG = 3.11
+    oe2.SIMAG = 3.11 + 0.477726
     oe2.SSOUR = 2.76
     oe2.THETA = 45.0
     oe2.T_IMAGE = 3.11
@@ -164,6 +285,8 @@ def run_shadow(source=True, obscure=3, trace=True, beam=None, p_shift=0.0, incid
             ibad = numpy.where(y > -0.2)
             beam.rays[ibad, 6:9] = 0.0
             beam.rays[ibad, 15:18] = 0.0
+        beam.rays[:, 1] += -0.477726
+
 
         if iwrite:
             oe0.write("end.00")
@@ -214,7 +337,7 @@ if __name__ == "__main__":
 
     set_qt()
 
-    Incidence = numpy.linspace(30, 50.0, 51)
+    Incidence = numpy.linspace(65,80,40)
     Grazing = 90.0 - Incidence
 
     Radius = numpy.zeros_like(Grazing)
@@ -230,6 +353,8 @@ if __name__ == "__main__":
 
     run_preprocessor()
     beam, oe1 = run_shadow(source=True,obscure=3,trace=False)
+    # beam, oe1 = run_bm(onlysource=True)
+
     beam_source = beam.duplicate()
 
     y = beam_source.getshonecol(2)
@@ -238,18 +363,29 @@ if __name__ == "__main__":
     # imax = tkt["histogram"].argmax()
     # center = tkt["bin_center"][imax]
 
-    p_shift = numpy.average(y,weights=w)
-    print(">>>>>o_shift: ",p_shift)
+    p_shift =  numpy.average(y,weights=w)
+    print(">>>>>p_shift: ",p_shift)
+
+    p_foc =1.58 - p_shift #  2.058216
+    q_foc = 4.290000
+    theta_foc =  39.000000
+    mm = (1.0 / p_foc + 1.0 / q_foc)
+    R = 2 / (numpy.cos(theta_foc * numpy.pi / 180)) / mm
+
 
     # Shadow.ShadowTools.plotxy(beam, 2, 1, nbins=101, nolost=1, title="Top view")
     # Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=101, nolost=1, title="Real space")
-    
+
     for i,incidence in enumerate(Incidence):
-        grazing = 90.0 - incidence
+
+        R = 2 / (numpy.cos(incidence * numpy.pi / 180)) / mm
+
+        # beam, oe1 = run_bm(incidence=incidence, radius=R)
         beam = None
         beam = beam_source.duplicate()
+        beam,oe1 = run_shadow(source=False, trace=True, p_shift=p_shift, beam=beam,
+                              incidence=incidence, radius=R)
 
-        beam,oe1 = run_shadow(source=False, trace=True, p_shift=p_shift, beam=beam, incidence=incidence)
         # Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=101, nolost=1, title="Real space")
 
         tkt = beam.histo1(1,ref=23,nbins=201,nolost=1) # xrange=[-4000e-6,4000e-6],
@@ -272,9 +408,9 @@ if __name__ == "__main__":
 
 
 
-    # plot(Radius,Fwhm,xtitle="R/m",ytitle="FWHM/um",show=False)
-    # plot(Incidence, Fwhm,Incidence, Std,xtitle="Incidence/deg",ytitle="FWHM/um",legend=["fwhm","std"],show=False)
-    # plot(Incidence, Position, xtitle="Incidence/deg", ytitle="Position/um")
+    plot(Radius,Fwhm,xtitle="R/m",ytitle="FWHM/um",show=False)
+    plot(Incidence, Fwhm,Incidence, Std,xtitle="Incidence/deg",ytitle="FWHM/um",legend=["fwhm","std"],show=False)
+    plot(Incidence, Position, xtitle="Incidence/deg", ytitle="Position/um")
 
     h.create_entry("scan results", nx_default="Fwhm")
     h.add_dataset(Incidence, Fwhm, dataset_name="Fwhm", entry_name="scan results",
@@ -290,50 +426,80 @@ if __name__ == "__main__":
     for key in tkt.keys():
         print(key)
 
-    print("p_shift: ",p_shift)
-    print("p: ", oe1.SSOUR)
+
     imin = Std.argmin()
-    print("best incidence angle: ",Incidence[imin])
-    # Shadow.ShadowTools.plotxy(beam,1,4,nbins=101,nolost=1,title="Phase space X")
-    # Shadow.ShadowTools.plotxy(beam,3,6,nbins=101,nolost=1,title="Phase space Z")
+    optimizedIncidence=Incidence[imin]
+    optimizedRadius = Radius[imin]
 
+
+
+
+    beam = None
+    beam = beam_source.duplicate()
+
+    # R = 2 / (numpy.cos(incidence * numpy.pi / 180)) / mm
+    beam, oe1 = run_shadow(source=False, trace=True, p_shift=p_shift, beam=beam,
+                           incidence=optimizedIncidence, radius=optimizedRadius)
+
+    # beam, oe1 = run_bm(incidence=optimizedIncidence,radius=optimizedRadius)
+
+    print("best incidence angle: ",optimizedIncidence)
+    print("Radius: ", optimizedRadius)
+    Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=101, nolost=1,
+                              xrange=[-5e-3,5e-3],
+                              title="theta: %f, R: %f"%(optimizedIncidence,optimizedRadius))
+
+    print("p: ", oe1.SSOUR)
+    print("p_shift: ", p_shift)
+    print("best incidence angle: ",optimizedIncidence)
+    print("Radius: ", optimizedRadius)
+
+    # #
+    # # optimize shift
+    # #
+    # Shift = numpy.linspace(0.9,1.1,100)
+    # Radius = optimizedRadius * Shift #numpy.zeros_like(Shift)
+    # Fwhm = numpy.zeros_like(Shift)
+    # Std = numpy.zeros_like(Shift)
+    # SPosition = numpy.zeros_like(Shift)
+    # Position = numpy.zeros_like(Shift)
     #
-    # optimize shift
+    # incidence = optimizedIncidence
     #
-    Shift = numpy.linspace(0.8,1.2,100)
-    Radius = numpy.zeros_like(Shift)
-    Fwhm = numpy.zeros_like(Shift)
-    Std = numpy.zeros_like(Shift)
-    SPosition = numpy.zeros_like(Shift)
-    Position = numpy.zeros_like(Shift)
-
-    incidence = Incidence[imin]
-    for i in range(Shift.size):
-        beam = None
-        beam = beam_source.duplicate()
-
-        beam,oe1 = run_shadow(source=False, trace=True, p_shift=p_shift*Shift[i], beam=beam, incidence=incidence)
-        # Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=101, nolost=1, title="Real space")
-
-        tkt = beam.histo1(1,ref=23,nbins=201,nolost=1) # xrange=[-4000e-6,4000e-6],
-        if tkt["fwhm"] is None:
-            tkt["fwhm"] = 0.0
-        imax = tkt["histogram"].argmax()
-        Position[i] = 1e6 * tkt["bin_center"][imax]
-
-        print(incidence,oe1.RMIRR,1e6*tkt["fwhm"])
-        Radius[i] = oe1.RMIRR
-        Fwhm[i] = 1e6*tkt["fwhm"]
-        Std[i] = 1e6 * beam.get_standard_deviation(1,nolost=1,ref=23)
-        SPosition[i] = oe1.SSOUR
-        # # tkt = beam.histo1(1,ref=23,nolost=1,xrange=[-5e-3,5e-3])
-        # # imax = tkt["histogram"].argmax()
-        # # Position[i] = tkt["bin_center"][imax]
-        #
-        # h.create_entry("iteration incidence %f" % incidence, nx_default="histogram")
-        # h.add_dataset(1e6*tkt["bin_path"],tkt["histogram_path"], dataset_name="histogram",entry_name="iteration incidence %f" % incidence,
-        #               title_x="X / um",title_y="intensity / a.u.")
-        #
-    plot(SPosition, Fwhm,xtitle="p/m",ytitle="FWHM/um",show=False)
-    plot(SPosition, Fwhm,SPosition, Std,xtitle="p/m",ytitle="FWHM/um",legend=["fwhm","std"],show=False)
-    plot(SPosition, Position, xtitle="p/m", ytitle="Position/um")
+    # for i in range(Shift.size):
+    #
+    #     beam = None
+    #     beam = beam_source.duplicate()
+    #
+    #     beam0, oe1 = run_shadow(source=False, trace=True, p_shift=p_shift, beam=beam,
+    #                             incidence=incidence,radius=Radius[i])
+    #
+    #
+    #     # Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=101, nolost=1, title="Real space")
+    #
+    #     tkt = beam.histo1(1,ref=23,nbins=201,nolost=1) # xrange=[-4000e-6,4000e-6],
+    #     if tkt["fwhm"] is None:
+    #         tkt["fwhm"] = 0.0
+    #     imax = tkt["histogram"].argmax()
+    #
+    #     print(incidence,oe1.RMIRR,1e6*tkt["fwhm"])
+    #     # Radius[i] = oe1.RMIRR
+    #     Fwhm[i] = 1e6*tkt["fwhm"]
+    #     Std[i] = 1e6 * beam.get_standard_deviation(1,nolost=1,ref=23)
+    #
+    #     tkt = beam.histo1(1,ref=23,nolost=1,xrange=[-5e-3,5e-3])
+    #     imax = tkt["histogram"].argmax()
+    #     Position[i] = tkt["bin_center"][imax]
+    #     #
+    #     # h.create_entry("iteration incidence %f" % incidence, nx_default="histogram")
+    #     # h.add_dataset(1e6*tkt["bin_path"],tkt["histogram_path"], dataset_name="histogram",entry_name="iteration incidence %f" % incidence,
+    #     #               title_x="X / um",title_y="intensity / a.u.")
+    #     #
+    # plot(Radius, Fwhm,
+    #      Radius, Std,xtitle="radius/m",ytitle="FWHM/um",legend=["fwhm","std"],show=False)
+    # plot(Radius, Position,       xtitle="radius/m", ytitle="Position/um")
+    #
+    # print("best Radius before optimization: ", optimizedRadius)
+    # imin = Std.argmin()
+    # optimizedRadius = Radius[imin]
+    # print("best Radius: ", optimizedRadius)
