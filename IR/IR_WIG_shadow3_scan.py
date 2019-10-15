@@ -3,23 +3,21 @@
 #
 import Shadow
 import numpy
-def run_bm(incidence=45.0,radius=1.0,onlysource=False):
-    #
-    # Python script to run shadow3. Created automatically with ShadowTools.make_python_script_from_list().
-    #
-    import Shadow
-    import numpy
 
-    # write (1) or not (0) SHADOW files start.xx end.xx star.xx
-    iwrite = 0
+
+from twocylinders import shadow3file_twocylinders
+
+def get_R(p_foc,q_foc,incidence):
+    mm = (1.0 / p_foc + 1.0 / q_foc)
+    return 2 / (numpy.cos(incidence * numpy.pi / 180)) / mm
+
+def run_source_bm(NPOINT=30000,y_shift=0.0,magnetic_radius=10.0,horizontal_divergence=66e-3):
 
     #
     # initialize shadow3 source (oe0) and beam
     #
     beam = Shadow.Beam()
     oe0 = Shadow.Source()
-    oe1 = Shadow.OE()
-    oe2 = Shadow.OE()
 
     #
     # Define variables. See meaning of variables in:
@@ -34,17 +32,17 @@ def run_bm(incidence=45.0,radius=1.0,onlysource=False):
     oe0.FSOURCE_DEPTH = 4
     oe0.F_COLOR = 3
     oe0.F_PHOT = 0
-    oe0.HDIV1 = 0.033
-    oe0.HDIV2 = 0.033
+    oe0.HDIV1 = 0.5 * horizontal_divergence
+    oe0.HDIV2 = 0.5 * horizontal_divergence
     oe0.ISTAR1 = 5676561
     oe0.NCOL = 0
-    oe0.NPOINT = 30000
+    oe0.NPOINT = NPOINT
     oe0.N_COLOR = 0
     oe0.PH1 = 0.4
     oe0.PH2 = 0.401
     oe0.POL_DEG = 0.0
-    oe0.R_ALADDIN = -7.234837681238457
-    oe0.R_MAGNET = -7.234837681238457
+    oe0.R_ALADDIN = magnetic_radius
+    oe0.R_MAGNET = magnetic_radius
     oe0.SIGDIX = 0.0
     oe0.SIGDIZ = 0.0
     oe0.SIGMAX = 3.9e-05
@@ -56,17 +54,42 @@ def run_bm(incidence=45.0,radius=1.0,onlysource=False):
     oe0.WYSOU = 0.0
     oe0.WZSOU = 0.0
 
+
+    beam.genSource(oe0)
+
+    beam.rays[:, 1] += y_shift
+
+    return beam
+
+def run_adaptive_beamline(beam, incidence=45.0, FILE_RIP=b'/home/manuel/OASYS1.2/alsu-scripts/IR/presurface.dat', y_shift=0.0):
+
+    # write (1) or not (0) SHADOW files start.xx end.xx star.xx
+    iwrite = 0
+
+    #
+    # initialize shadow3 source (oe0) and beam
+    #
+
+    oe1 = Shadow.OE()
+    oe2 = Shadow.OE()
+
+    #
+    # Define variables. See meaning of variables in:
+    #  https://raw.githubusercontent.com/srio/shadow3/master/docs/source.nml
+    #  https://raw.githubusercontent.com/srio/shadow3/master/docs/oe.nml
+    #
+
     oe1.ALPHA = 90.0
     oe1.DUMMY = 100.0
-    oe1.FCYL = 1
-    oe1.FMIRR = 1
+    oe1.FILE_RIP = FILE_RIP
     oe1.FWRITE = 1
-    oe1.F_EXT = 1
-    oe1.RMIRR = radius
+    oe1.F_G_S = 2
+    oe1.F_RIPPLE = 1
     oe1.T_IMAGE = 0.0
     oe1.T_INCIDENCE = incidence
     oe1.T_REFLECTION = incidence
     oe1.T_SOURCE = 1.58
+
 
     oe2.ALPHA = 90.0
     oe2.DUMMY = 100.0
@@ -74,30 +97,16 @@ def run_bm(incidence=45.0,radius=1.0,onlysource=False):
     oe2.FMIRR = 1
     oe2.FWRITE = 1
     oe2.F_DEFAULT = 0
-    oe2.SIMAG = 3.11 +0.477726
-    oe2.SSOUR = 2.76
+    oe2.SIMAG = 3.11
+    oe2.SSOUR = 1.58 +1.18 - y_shift
     oe2.THETA = 45.0
     oe2.T_IMAGE = 3.11
     oe2.T_INCIDENCE = 45.0
     oe2.T_REFLECTION = 45.0
     oe2.T_SOURCE = 1.18
 
-    # Run SHADOW to create the source
 
-    if iwrite:
-        oe0.write("start.00")
 
-    beam.genSource(oe0)
-
-    beam.rays[:, 1] += -0.477726
-
-    if onlysource:
-        return beam,oe1
-    # print(">>>>>>>>><<<<<<<<<<<", beam.rays[:, 1])
-
-    if iwrite:
-        oe0.write("end.00")
-        beam.write("begin.dat")
 
     #
     # run optical element 1
@@ -131,11 +140,106 @@ def run_bm(incidence=45.0,radius=1.0,onlysource=False):
 
     return beam,oe1
 
-def run_preprocessor():
+
+
+def run_beamline(beam, incidence=45.0, radius=1.0, y_shift=0.0):
+
+    # write (1) or not (0) SHADOW files start.xx end.xx star.xx
+    iwrite = 0
+
+    #
+    # initialize shadow3 source (oe0) and beam
+    #
+
+    oe1 = Shadow.OE()
+    oe2 = Shadow.OE()
+
+    #
+    # Define variables. See meaning of variables in:
+    #  https://raw.githubusercontent.com/srio/shadow3/master/docs/source.nml
+    #  https://raw.githubusercontent.com/srio/shadow3/master/docs/oe.nml
+    #
+
+    oe1.ALPHA = 90.0
+    oe1.DUMMY = 100.0
+    oe1.FCYL = 1
+    oe1.FMIRR = 1
+    oe1.FWRITE = 1
+    oe1.F_EXT = 1
+    oe1.RMIRR = radius
+    oe1.T_IMAGE = 0.0
+    oe1.T_INCIDENCE = incidence
+    oe1.T_REFLECTION = incidence
+    oe1.T_SOURCE = 1.58
+
+    oe2.ALPHA = 90.0
+    oe2.DUMMY = 100.0
+    oe2.FCYL = 1
+    oe2.FMIRR = 1
+    oe2.FWRITE = 1
+    oe2.F_DEFAULT = 0
+    oe2.SIMAG = 3.11
+    oe2.SSOUR = 1.58 +1.18 - y_shift
+    oe2.THETA = 45.0
+    oe2.T_IMAGE = 3.11
+    oe2.T_INCIDENCE = 45.0
+    oe2.T_REFLECTION = 45.0
+    oe2.T_SOURCE = 1.18
+
+
+
+
+    #
+    # run optical element 1
+    #
+    print("    Running optical element: %d" % (1))
+    if iwrite:
+        oe1.write("start.01")
+
+    beam.traceOE(oe1, 1)
+
+    if iwrite:
+        oe1.write("end.01")
+        beam.write("star.01")
+
+    #
+    # run optical element 2
+    #
+    print("    Running optical element: %d" % (2))
+    if iwrite:
+        oe2.write("start.02")
+
+    beam.traceOE(oe2, 2)
+
+    if iwrite:
+        oe2.write("end.02")
+        beam.write("star.02")
+
+    # Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=101, nolost=1, title="Real space")
+    # Shadow.ShadowTools.plotxy(beam,1,4,nbins=101,nolost=1,title="Phase space X")
+    # Shadow.ShadowTools.plotxy(beam,3,6,nbins=101,nolost=1,title="Phase space Z")
+
+    return beam,oe1
+
+def run_preprocessor(enerMin=1000.0,enerMax=1000.1,):
     #
     # script to run the wiggler preprocessor (created by ShadowOui:Wiggler)
     #
     from srxraylib.sources import srfunc
+
+    # (traj, pars) = srfunc.wiggler_trajectory(
+    #     b_from=1,
+    #     inData="BM_multi.b",
+    #     nPer=1,
+    #     nTrajPoints=501,
+    #     ener_gev=1.9,
+    #     per=0.01,
+    #     kValue=1.0,
+    #     trajFile="tmp.traj",
+    #     shift_x_flag=4,
+    #     shift_x_value=0.0,
+    #     shift_betax_flag=4,
+    #     shift_betax_value=0.094)
 
     (traj, pars) = srfunc.wiggler_trajectory(
         b_from=1,
@@ -146,18 +250,18 @@ def run_preprocessor():
         per=0.01,
         kValue=1.0,
         trajFile="tmp.traj",
-        shift_x_flag=4,
-        shift_x_value=0.0,
+        shift_x_flag=5,
+        shift_x_value=0.042,
         shift_betax_flag=4,
-        shift_betax_value=0.094)
+        shift_betax_value=0.0324)
 
     #
     # calculate cdf and write file for Shadow/Source
     #
 
     srfunc.wiggler_cdf(traj,
-                       enerMin=1000.0,
-                       enerMax=1000.1,
+                       enerMin=enerMin,
+                       enerMax=enerMax,
                        enerPoints=1001,
                        outFile=b'xshwig.sha',
                        elliptical=False)
@@ -167,7 +271,7 @@ def run_preprocessor():
     if calculate_spectrum:
         e, f, w = srfunc.wiggler_spectrum(traj,
                                           enerMin=1000.0,
-                                          enerMax=1000.1,
+                                          enerMax=100000.1,
                                           nPoints=500,
                                           electronCurrent=400.0 * 1e-3,
                                           outFile="spectrum.dat",
@@ -182,25 +286,13 @@ def run_preprocessor():
     #
 
 
-def run_shadow(source=True, obscure=3, trace=True, beam=None,
-               p_shift=0.0, incidence=39.9, X_ROT=0.0, radius=3.579513):
-    #
-    # Python script to run shadow3. Created automatically with ShadowTools.make_python_script_from_list().
-    #
-    import Shadow
-    import numpy
 
-    # write (1) or not (0) SHADOW files start.xx end.xx star.xx
-    iwrite = 0
-
+def run_source_wiggler(select_bm=1):
     #
     # initialize shadow3 source (oe0) and beam
     #
 
     oe0 = Shadow.Source()
-    oe1 = Shadow.OE()
-    oe2 = Shadow.OE()
-
 
     #
     # Define variables. See meaning of variables in:
@@ -242,151 +334,107 @@ def run_shadow(source=True, obscure=3, trace=True, beam=None,
     oe0.WYSOU = 0.0
     oe0.WZSOU = 0.0
 
-    oe1.ALPHA = 90.0
-    oe1.DUMMY = 100.0
-    oe1.FCYL = 1
-    oe1.FMIRR = 1
-    oe1.FWRITE = 1
-    oe1.F_EXT = 1
-    oe1.RMIRR = radius
-    oe1.T_IMAGE = 0.0
-    oe1.T_INCIDENCE = incidence
-    oe1.T_REFLECTION = incidence
-    oe1.T_SOURCE = 1.58
-
-    oe2.ALPHA = 90.0
-    oe2.DUMMY = 100.0
-    oe2.FCYL = 1
-    oe2.FMIRR = 1
-    oe2.FWRITE = 1
-    oe2.F_DEFAULT = 0
-    oe2.SIMAG = 3.11 + 0.477726
-    oe2.SSOUR = 2.76
-    oe2.THETA = 45.0
-    oe2.T_IMAGE = 3.11
-    oe2.T_INCIDENCE = 45.0
-    oe2.T_REFLECTION = 45.0
-    oe2.T_SOURCE = 1.18
 
     # Run SHADOW to create the source
 
-    if source:
-        beam = Shadow.Beam()
-        if iwrite:
-            oe0.write("start.00")
+    beam = Shadow.Beam()
 
-        beam.genSource(oe0)
-
-        #
-        # obscure a part
-        #
-        if obscure == 3:
-            y = beam.rays[:, 1]
-            ibad = numpy.where(y > -0.2)
-            beam.rays[ibad, 6:9] = 0.0
-            beam.rays[ibad, 15:18] = 0.0
-        beam.rays[:, 1] += -0.477726
-
-
-        if iwrite:
-            oe0.write("end.00")
-            beam.write("begin.dat")
-
-    if not trace:
-        return beam, oe1
-
-
-
+    beam.genSource(oe0)
 
     #
-    # run optical element 1
+    # select a part
     #
-    print("    Running optical element: %d" % (1))
-    if iwrite:
-        oe1.write("start.01")
+    if select_bm == 1:
+        y = beam.rays[:, 1]
+        ibad = numpy.where(y > -0.2)
+        beam.rays[ibad, 6:9] = 0.0
+        beam.rays[ibad, 15:18] = 0.0
+    elif select_bm == 2:
+        pass
+    elif select_bm == 3:
+        y = beam.rays[:, 1]
+        ibad = numpy.where(y < 0.2)
+        beam.rays[ibad, 6:9] = 0.0
+        beam.rays[ibad, 15:18] = 0.0
 
-    beam.traceOE(oe1, 1)
-
-    if iwrite:
-        oe1.write("end.01")
-        beam.write("star.01")
-
-    #
-    # run optical element 2
-    #
-    print("    Running optical element: %d" % (2))
-    if iwrite:
-        oe2.write("start.02")
-
-    beam.traceOE(oe2, 2)
-
-    if iwrite:
-        oe2.write("end.02")
-        beam.write("star.02")
-
-    # Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=101, nolost=1, title="Real space")
-    # Shadow.ShadowTools.plotxy(beam,1,4,nbins=101,nolost=1,title="Phase space X")
-    # Shadow.ShadowTools.plotxy(beam,3,6,nbins=101,nolost=1,title="Phase space Z")
-
-    return beam, oe1
+    return beam
 
 if __name__ == "__main__":
-
+    import h5py
     from srxraylib.plot.gol import plot, set_qt
     from srxraylib.util.h5_simple_writer import H5SimpleWriter
 
     set_qt()
 
-    Incidence = numpy.linspace(65,80,40)
-    Grazing = 90.0 - Incidence
+    wiggler_or_bm = 1 # 0=wiggler, 1=Mag7, 2=Antibend, 3=Mag8
+    select_bm = 1 # this is only for wiffler selection
+    use_adaptive = False
 
-    Radius = numpy.zeros_like(Grazing)
-    Fwhm = numpy.zeros_like(Grazing)
-    Std = numpy.zeros_like(Grazing)
-    Position = numpy.zeros_like(Grazing)
+    Incidence = numpy.linspace(55, 80, 40)
+    # Incidence = numpy.linspace(20, 80, 40)
 
-    import h5py
-    print(">>>>>>>>>>>>>>>>>>>>",h5py.version.version)
+    Radius   = numpy.zeros_like(Incidence)
+    Fwhm     = numpy.zeros_like(Incidence)
+    Std      = numpy.zeros_like(Incidence)
+    Position = numpy.zeros_like(Incidence)
+
+
     h = H5SimpleWriter.initialize_file("IR_WIG_shadow3_scan.h5")
 
 
+    if wiggler_or_bm == 0:
+        run_preprocessor(enerMin=1000.0, enerMax=1001.0)
+        beam = run_source_wiggler(select_bm=select_bm)
 
-    run_preprocessor()
-    beam, oe1 = run_shadow(source=True,obscure=3,trace=False)
-    # beam, oe1 = run_bm(onlysource=True)
+        y = beam.getshonecol(2)
+        w = beam.getshonecol(23)
+        y_shift = numpy.average(y, weights=w)
+    elif wiggler_or_bm == 1:
+        y_shift =  -0.4778 # 0.0
+        magnetic_radius=-7.2348
+        horizontal_divergence = 66e-3
+        beam = run_source_bm(y_shift=y_shift,magnetic_radius=magnetic_radius,horizontal_divergence=horizontal_divergence)
+    elif wiggler_or_bm == 2:
+        y_shift =  0.0
+        magnetic_radius=39.61
+        horizontal_divergence = 8.2e-3
+        beam = run_source_bm(y_shift=y_shift,magnetic_radius=magnetic_radius,horizontal_divergence=horizontal_divergence)
+    elif wiggler_or_bm == 3:
+        y_shift =  0.4778 # 0.0
+        magnetic_radius=-7.45877
+        horizontal_divergence = 66e-3
+        beam = run_source_bm(y_shift=y_shift,magnetic_radius=magnetic_radius,horizontal_divergence=horizontal_divergence)
+
+    print(">>>>>y_shift: ",y_shift)
 
     beam_source = beam.duplicate()
 
-    y = beam_source.getshonecol(2)
-    w = beam_source.getshonecol(23)
-    # tkt = beam.histo1(2, ref=23, nolost=1, nbins=301)
-    # imax = tkt["histogram"].argmax()
-    # center = tkt["bin_center"][imax]
-
-    p_shift =  numpy.average(y,weights=w)
-    print(">>>>>p_shift: ",p_shift)
-
-    p_foc =1.58 - p_shift #  2.058216
-    q_foc = 4.290000
-    theta_foc =  39.000000
-    mm = (1.0 / p_foc + 1.0 / q_foc)
-    R = 2 / (numpy.cos(theta_foc * numpy.pi / 180)) / mm
-
-
-    # Shadow.ShadowTools.plotxy(beam, 2, 1, nbins=101, nolost=1, title="Top view")
-    # Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=101, nolost=1, title="Real space")
 
     for i,incidence in enumerate(Incidence):
 
-        R = 2 / (numpy.cos(incidence * numpy.pi / 180)) / mm
+        p_foc = 1.58 - y_shift  # 2.058216
+        q_foc = 4.290000
+        # mm = (1.0 / p_foc + 1.0 / q_foc)
+        # R = 2 / (numpy.cos(incidence * numpy.pi / 180)) / mm
+        R = get_R(p_foc,q_foc,incidence)
 
-        # beam, oe1 = run_bm(incidence=incidence, radius=R)
+        # if bm_or_wiggler == 0:
         beam = None
         beam = beam_source.duplicate()
-        beam,oe1 = run_shadow(source=False, trace=True, p_shift=p_shift, beam=beam,
-                              incidence=incidence, radius=R)
 
-        # Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=101, nolost=1, title="Real space")
+        R1 = R # get_R(p_foc + 0.5 , q_foc, incidence)
+        R2 = R # get_R(p_foc - 0.5 , q_foc, incidence)
+
+        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> R: ",R)
+        if use_adaptive:
+            shadow3file_twocylinders(numpy.linspace(-0.02, 0.02, 11),
+                                     numpy.linspace(-0.25, 0.25, 200),
+                                     delta=0.00, radius1=R1, radius2=R2, filename="presurface.dat")
+            beam, oe1 = run_adaptive_beamline(beam, incidence=incidence, FILE_RIP=b"presurface.dat", y_shift=y_shift)
+        else:
+            beam, oe1 = run_beamline(beam, incidence=incidence, radius=R, y_shift=y_shift)
+
+
 
         tkt = beam.histo1(1,ref=23,nbins=201,nolost=1) # xrange=[-4000e-6,4000e-6],
         if tkt["fwhm"] is None:
@@ -395,12 +443,9 @@ if __name__ == "__main__":
         Position[i] = 1e6 * tkt["bin_center"][imax]
 
         print(incidence,oe1.RMIRR,1e6*tkt["fwhm"])
-        Radius[i] = oe1.RMIRR
+        Radius[i] = R
         Fwhm[i] = 1e6*tkt["fwhm"]
         Std[i] = 1e6 * beam.get_standard_deviation(1,nolost=1,ref=23)
-        # tkt = beam.histo1(1,ref=23,nolost=1,xrange=[-5e-3,5e-3])
-        # imax = tkt["histogram"].argmax()
-        # Position[i] = tkt["bin_center"][imax]
 
         h.create_entry("iteration incidence %f" % incidence, nx_default="histogram")
         h.add_dataset(1e6*tkt["bin_path"],tkt["histogram_path"], dataset_name="histogram",entry_name="iteration incidence %f" % incidence,
@@ -408,7 +453,7 @@ if __name__ == "__main__":
 
 
 
-    plot(Radius,Fwhm,xtitle="R/m",ytitle="FWHM/um",show=False)
+    plot(Incidence, Radius ,xtitle="Incidence/deg",ytitle="R/m",show=False)
     plot(Incidence, Fwhm,Incidence, Std,xtitle="Incidence/deg",ytitle="FWHM/um",legend=["fwhm","std"],show=False)
     plot(Incidence, Position, xtitle="Incidence/deg", ytitle="Position/um")
 
@@ -428,31 +473,47 @@ if __name__ == "__main__":
 
 
     imin = Std.argmin()
-    optimizedIncidence=Incidence[imin]
-    optimizedRadius = Radius[imin]
+    optimizedIncidence = Incidence[imin]     #
+    optimizedRadius    = Radius[imin]        #
 
+    #
+    # plot best result
+    #
 
+    if wiggler_or_bm == 0:
+        beam = None
+        beam = beam_source.duplicate()
+    else:
+        beam = run_source_bm(y_shift=y_shift, magnetic_radius=magnetic_radius,
+                             horizontal_divergence=horizontal_divergence,NPOINT=300000)
+        # beam = run_source_bm(y_shift=y_shift, magnetic_radius=magnetic_radius, NPOINT=300000)
 
+    if use_adaptive:
+        shadow3file_twocylinders(numpy.linspace(-0.02, 0.02, 11),
+                                 numpy.linspace(-0.25, 0.25, 200),
+                                 delta=0.00, radius1=optimizedRadius, radius2=optimizedRadius, filename="presurface.dat")
+        beam, oe1 = run_adaptive_beamline(beam, incidence=optimizedIncidence, FILE_RIP=b"presurface.dat", y_shift=y_shift)
+    else:
+        beam, oe1 = run_beamline(beam, incidence=optimizedIncidence, radius=optimizedRadius, y_shift=y_shift)
 
-    beam = None
-    beam = beam_source.duplicate()
-
-    # R = 2 / (numpy.cos(incidence * numpy.pi / 180)) / mm
-    beam, oe1 = run_shadow(source=False, trace=True, p_shift=p_shift, beam=beam,
-                           incidence=optimizedIncidence, radius=optimizedRadius)
-
-    # beam, oe1 = run_bm(incidence=optimizedIncidence,radius=optimizedRadius)
 
     print("best incidence angle: ",optimizedIncidence)
     print("Radius: ", optimizedRadius)
-    Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=101, nolost=1,
-                              xrange=[-5e-3,5e-3],
+    tkt = Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=201, nolost=1, ref=23,
+                              xrange=[-5e-3*5,5e-3*5],
                               title="theta: %f, R: %f"%(optimizedIncidence,optimizedRadius))
 
-    print("p: ", oe1.SSOUR)
-    print("p_shift: ", p_shift)
+    for k in tkt.keys():
+        print(">>> k: ",k, tkt[k])
+
+    print("y_shift: ", y_shift)
     print("best incidence angle: ",optimizedIncidence)
     print("Radius: ", optimizedRadius)
+    try:
+        print("Focal size FWHM: H: %f um, V: %f um: "%(1e6*tkt["fwhm_h"],1e6*tkt["fwhm_v"]))
+    except:
+        pass
+
 
     # #
     # # optimize shift
