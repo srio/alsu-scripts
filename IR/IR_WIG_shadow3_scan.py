@@ -368,7 +368,7 @@ if __name__ == "__main__":
 
     wiggler_or_bm = 1 # 0=wiggler, 1=Mag7, 2=Antibend, 3=Mag8
     select_bm = 1 # this is only for wiffler selection
-    use_adaptive = False
+    use_adaptive = True
 
     Incidence = numpy.linspace(55, 80, 40)
     # Incidence = numpy.linspace(20, 80, 40)
