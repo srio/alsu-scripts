@@ -11,7 +11,8 @@ def get_R(p_foc,q_foc,incidence):
     mm = (1.0 / p_foc + 1.0 / q_foc)
     return 2 / (numpy.cos(incidence * numpy.pi / 180)) / mm
 
-def run_source_bm(NPOINT=30000,y_shift=0.0,magnetic_radius=10.0,horizontal_divergence=66e-3):
+def run_source_bm(NPOINT=30000,y_shift=0.0,magnetic_radius=10.0,horizontal_divergence=66e-3,
+                  electron_energy=1.9):
 
     #
     # initialize shadow3 source (oe0) and beam
@@ -25,9 +26,17 @@ def run_source_bm(NPOINT=30000,y_shift=0.0,magnetic_radius=10.0,horizontal_diver
     #  https://raw.githubusercontent.com/srio/shadow3/master/docs/oe.nml
     #
 
-    oe0.BENER = 1.9
-    oe0.EPSI_X = 1.989e-09
-    oe0.EPSI_Z = 3.007e-11
+    oe0.BENER = electron_energy
+    if electron_energy == 1.9:
+        oe0.EPSI_X = 1.989e-09
+        oe0.EPSI_Z = 3.007e-11
+        oe0.SIGMAX = 3.9e-05
+        oe0.SIGMAZ = 3.1e-05
+    else:
+        oe0.EPSI_X = 70e-12
+        oe0.EPSI_Z = 70e-12
+        oe0.SIGMAX = 7e-06
+        oe0.SIGMAZ = 10e-06
     oe0.FDISTR = 6
     oe0.FSOURCE_DEPTH = 4
     oe0.F_COLOR = 3
@@ -45,9 +54,7 @@ def run_source_bm(NPOINT=30000,y_shift=0.0,magnetic_radius=10.0,horizontal_diver
     oe0.R_MAGNET = magnetic_radius
     oe0.SIGDIX = 0.0
     oe0.SIGDIZ = 0.0
-    oe0.SIGMAX = 3.9e-05
     oe0.SIGMAY = 0.0
-    oe0.SIGMAZ = 3.1e-05
     oe0.VDIV1 = 0.05
     oe0.VDIV2 = 0.05
     oe0.WXSOU = 0.0
@@ -221,7 +228,7 @@ def run_beamline(beam, incidence=45.0, radius=1.0, y_shift=0.0):
 
     return beam,oe1
 
-def run_preprocessor(enerMin=1000.0,enerMax=1000.1,):
+def run_preprocessor(enerMin=1000.0,enerMax=1000.1,electron_energy=1.9):
     #
     # script to run the wiggler preprocessor (created by ShadowOui:Wiggler)
     #
@@ -246,7 +253,7 @@ def run_preprocessor(enerMin=1000.0,enerMax=1000.1,):
         inData="BM_multi.b",
         nPer=1,
         nTrajPoints=501,
-        ener_gev=1.9,
+        ener_gev=electron_energy,
         per=0.01,
         kValue=1.0,
         trajFile="tmp.traj",
@@ -287,7 +294,7 @@ def run_preprocessor(enerMin=1000.0,enerMax=1000.1,):
 
 
 
-def run_source_wiggler(select_bm=1):
+def run_source_wiggler(select_bm=1,electron_energy=1.9):
     #
     # initialize shadow3 source (oe0) and beam
     #
@@ -300,10 +307,18 @@ def run_source_wiggler(select_bm=1):
     #  https://raw.githubusercontent.com/srio/shadow3/master/docs/oe.nml
     #
 
-    oe0.BENER = 1.9
+    oe0.BENER = electron_energy
+    if electron_energy == 1.9:
+        oe0.EPSI_X = 1.989e-09
+        oe0.EPSI_Z = 3.007e-11
+        oe0.SIGMAX = 3.9e-05
+        oe0.SIGMAZ = 3.1e-05
+    else:
+        oe0.EPSI_X = 70e-12
+        oe0.EPSI_Z = 70e-12
+        oe0.SIGMAX = 7e-06
+        oe0.SIGMAZ = 10e-06
     oe0.CONV_FACT = 1.0
-    oe0.EPSI_X = 1.989e-09
-    oe0.EPSI_Z = 3.007e-11
     oe0.FDISTR = 0
     oe0.FILE_TRAJ = b'xshwig.sha'
     oe0.FSOUR = 0
@@ -325,9 +340,7 @@ def run_source_wiggler(select_bm=1):
     oe0.PH1 = 1000.0
     oe0.PH2 = 1000.1
     oe0.POL_DEG = 0.0
-    oe0.SIGMAX = 3.9e-05
     oe0.SIGMAY = 0.0
-    oe0.SIGMAZ = 3.1e-05
     oe0.VDIV1 = 1.0
     oe0.VDIV2 = 1.0
     oe0.WXSOU = 0.0
@@ -366,12 +379,13 @@ if __name__ == "__main__":
 
     set_qt()
 
-    wiggler_or_bm = 1 # 0=wiggler, 1=Mag7, 2=Antibend, 3=Mag8
-    select_bm = 1 # this is only for wiffler selection
+    wiggler_or_bm = 4 # 0=wiggler, 1=Mag7, 2=Antibend, 3=Mag8, 4=ALS
+    select_bm = 1 # this is only for wiggler selection: 1=Mag7 2=antibend(to check), 3=Mag8
     use_adaptive = True
 
-    Incidence = numpy.linspace(55, 80, 40)
-    # Incidence = numpy.linspace(20, 80, 40)
+
+    Incidence = numpy.linspace(55, 80, 151)
+    # Incidence = numpy.linspace(80, 89, 50)
 
     Radius   = numpy.zeros_like(Incidence)
     Fwhm     = numpy.zeros_like(Incidence)
@@ -381,29 +395,48 @@ if __name__ == "__main__":
 
     h = H5SimpleWriter.initialize_file("IR_WIG_shadow3_scan.h5")
 
+    # Radius M1: 7.615618611829955
+    # Radius AB: 41.695511899769
+    # Radius M2: 7.857811429874018
+    # Half - Divergence M1: 0.032827274151
+    # Half - Divergence AB: 0.0038973019540000007
+    # Half - Divergence M2: 0.031841706445325
 
     if wiggler_or_bm == 0:
         run_preprocessor(enerMin=1000.0, enerMax=1001.0)
-        beam = run_source_wiggler(select_bm=select_bm)
+        beam = run_source_wiggler(select_bm=select_bm,electron_energy=2.0)
 
         y = beam.getshonecol(2)
         w = beam.getshonecol(23)
         y_shift = numpy.average(y, weights=w)
     elif wiggler_or_bm == 1:
-        y_shift =  -0.4778 # 0.0
-        magnetic_radius=-7.2348
-        horizontal_divergence = 66e-3
-        beam = run_source_bm(y_shift=y_shift,magnetic_radius=magnetic_radius,horizontal_divergence=horizontal_divergence)
+        y_shift =  0.0 # -0.4778 # 0.0
+        magnetic_radius=-7.615618611829955
+        horizontal_divergence = 2*0.032827274151
+        beam = run_source_bm(y_shift=y_shift,magnetic_radius=magnetic_radius,
+                             horizontal_divergence=horizontal_divergence,
+                             electron_energy=2.0)
     elif wiggler_or_bm == 2:
         y_shift =  0.0
-        magnetic_radius=39.61
-        horizontal_divergence = 8.2e-3
-        beam = run_source_bm(y_shift=y_shift,magnetic_radius=magnetic_radius,horizontal_divergence=horizontal_divergence)
+        magnetic_radius= 41.695511899769 ## attention to sign reversed!!
+        horizontal_divergence = 2*0.0038973019540000007
+        beam = run_source_bm(y_shift=y_shift,magnetic_radius=magnetic_radius,
+                             horizontal_divergence=horizontal_divergence,
+                             electron_energy=2.0)
     elif wiggler_or_bm == 3:
-        y_shift =  0.4778 # 0.0
-        magnetic_radius=-7.45877
-        horizontal_divergence = 66e-3
-        beam = run_source_bm(y_shift=y_shift,magnetic_radius=magnetic_radius,horizontal_divergence=horizontal_divergence)
+        y_shift =  0.0 # 0.4778 # 0.0
+        magnetic_radius=-7.857811429874018
+        horizontal_divergence = 2*0.031841706445325
+        beam = run_source_bm(y_shift=y_shift,magnetic_radius=magnetic_radius,
+                             horizontal_divergence=horizontal_divergence,
+                             electron_energy=2.0)
+    elif wiggler_or_bm == 4:
+        y_shift = 0.0  # 0.0
+        magnetic_radius = -5.0
+        horizontal_divergence = 69e-3
+        beam = run_source_bm(y_shift=y_shift, magnetic_radius=magnetic_radius,
+                             horizontal_divergence=horizontal_divergence,
+                             electron_energy=1.9)
 
     print(">>>>>y_shift: ",y_shift)
 
@@ -479,7 +512,6 @@ if __name__ == "__main__":
     #
     # plot best result
     #
-
     if wiggler_or_bm == 0:
         beam = None
         beam = beam_source.duplicate()
@@ -497,18 +529,18 @@ if __name__ == "__main__":
         beam, oe1 = run_beamline(beam, incidence=optimizedIncidence, radius=optimizedRadius, y_shift=y_shift)
 
 
-    print("best incidence angle: ",optimizedIncidence)
-    print("Radius: ", optimizedRadius)
+    print("best incidence angle: %f deg, grazing: %f deg"%(optimizedIncidence,90-optimizedIncidence))
+    print("Radius: %f m"%optimizedRadius)
     tkt = Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=201, nolost=1, ref=23,
-                              xrange=[-5e-3*5,5e-3*5],
+                              # xrange=[-5e-3*5,5e-3*5],
                               title="theta: %f, R: %f"%(optimizedIncidence,optimizedRadius))
 
     for k in tkt.keys():
         print(">>> k: ",k, tkt[k])
 
     print("y_shift: ", y_shift)
-    print("best incidence angle: ",optimizedIncidence)
-    print("Radius: ", optimizedRadius)
+    print("best incidence angle: %f deg, grazing: %f deg"%(optimizedIncidence,90-optimizedIncidence))
+    print("Radius: %f m"%optimizedRadius)
     try:
         print("Focal size FWHM: H: %f um, V: %f um: "%(1e6*tkt["fwhm_h"],1e6*tkt["fwhm_v"]))
     except:

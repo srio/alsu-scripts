@@ -136,7 +136,7 @@ if __name__ == "__main__":
 
     set_qt()
 
-    Grazing = numpy.linspace(15, 30.0, 5) #151)
+    Grazing = numpy.linspace(15, 30.0, 151)
 
     Radius = numpy.zeros_like(Grazing)
     Fwhm = numpy.zeros_like(Grazing)
@@ -179,3 +179,8 @@ if __name__ == "__main__":
         print(key)
     # Shadow.ShadowTools.plotxy(beam,1,4,nbins=101,nolost=1,title="Phase space X")
     # Shadow.ShadowTools.plotxy(beam,3,6,nbins=101,nolost=1,title="Phase space Z")
+    imin = Std.argmin()
+    optimizedIncidence = Incidence[imin]     #
+    optimizedRadius    = Radius[imin]        #
+    print("best incidence angle: %f deg, grazing %f deg"%(optimizedIncidence,90-optimizedIncidence))
+    print("Radius: %f m "%optimizedRadius)

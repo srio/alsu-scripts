@@ -63,11 +63,11 @@ def get_magnetic_field_ALS(do_plot=False,filename=""):
 
 if __name__ == "__main__":
     set_qt()
-    electron_energy_in_GeV = 1.9
+    electron_energy_in_GeV = 2.0
 
     print("Radius M1: ", 1e9 / codata.c * electron_energy_in_GeV/0.876)
     print("Radius AB: ", 1e9 / codata.c * electron_energy_in_GeV/0.16)
-    print("Radius M2: ", 1e9 / codata.c * electron_energy_in_GeV/0.8497)
+    print("Radius M2: ", 1e9 / codata.c * electron_energy_in_GeV/0.849)
 
     print("Half-Divergence M1: ", 0.5 * (0.500) / (1e9 / codata.c * electron_energy_in_GeV/0.876) )
     print("Half-Divergence AB: ", 0.5 * (0.325) / (1e9 / codata.c * electron_energy_in_GeV/0.16) )

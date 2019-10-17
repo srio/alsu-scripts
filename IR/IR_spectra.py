@@ -5,7 +5,7 @@ import scipy.constants as codata
 import srxraylib.sources.srfunc as srfunc
 from IR_magnetic_field import get_magnetic_field_ALS,get_magnetic_field_ALSU
 
-def calculate_flux(y,B,M=0):
+def calculate_flux(y,B,M=0,energy_GeV=2.0):
     # analyse M1
 
     B3 = B.copy()
@@ -31,7 +31,7 @@ def calculate_flux(y,B,M=0):
         inData=tmp, #"BM_first.b",
         nPer=1,
         nTrajPoints=501,
-        ener_gev=1.9,
+        ener_gev=energy_GeV,
         per=0.01,
         kValue=1.0,
         trajFile="tmp.traj",
@@ -47,7 +47,7 @@ def calculate_flux(y,B,M=0):
                                           enerMin=0.0010,
                                           enerMax=10000.1,
                                           nPoints=500,
-                                          electronCurrent=400.0 * 1e-3,
+                                          electronCurrent=500.0 * 1e-3,
                                           outFile="spectrum.dat",
                                           elliptical=False)
         from srxraylib.plot.gol import plot
@@ -61,31 +61,19 @@ def calculate_flux(y,B,M=0):
 if __name__ == "__main__":
     set_qt()
 
-    electron_energy_in_GeV = 1.9
-
-    print("ALSU Radius M1: ", 1e9 / codata.c * electron_energy_in_GeV/0.876)
-    print("ALSU Radius AB: ", 1e9 / codata.c * electron_energy_in_GeV/0.16)
-    print("ALSU Radius M2: ", 1e9 / codata.c * electron_energy_in_GeV/0.8497)
-
-    print("ALSU Half-Divergence M1: ", 0.5 * (0.500) / (1e9 / codata.c * electron_energy_in_GeV/0.876) )
-    print("ALSU Half-Divergence AB: ", 0.5 * (0.325) / (1e9 / codata.c * electron_energy_in_GeV/0.16) )
-    print("ALSU Half-Divergence M2: ", 0.5 * (0.500) / (1e9 / codata.c * electron_energy_in_GeV/0.8497) )
-
-
-
     #
     # spectrum
     #
 
     yy, B2 = get_magnetic_field_ALSU(do_plot=True)
 
-    e1, f1, w1 = calculate_flux(yy, B2, M=1)
-    e2, f2, w2 = calculate_flux(yy, B2, M=2)
-    e3, f3, w3 = calculate_flux(yy, B2, M=3)
-    e0, f0, w0 = calculate_flux(yy, B2, M=0)
+    e1, f1, w1 = calculate_flux(yy, B2, M=1, energy_GeV=2.0)
+    e2, f2, w2 = calculate_flux(yy, B2, M=2, energy_GeV=2.0)
+    e3, f3, w3 = calculate_flux(yy, B2, M=3, energy_GeV=2.0)
+    e0, f0, w0 = calculate_flux(yy, B2, M=0, energy_GeV=2.0)
 
     yy, B2 = get_magnetic_field_ALS(do_plot=True)
-    eold, fold, wold = calculate_flux(yy, B2, M=0)
+    eold, fold, wold = calculate_flux(yy, B2, M=0, energy_GeV=1.9)
 
     plot(e0, f0,
          e1, f1,
