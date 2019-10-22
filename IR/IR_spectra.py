@@ -3,7 +3,7 @@ from srxraylib.plot.gol import plot, set_qt
 from scipy.ndimage import gaussian_filter1d
 import scipy.constants as codata
 import srxraylib.sources.srfunc as srfunc
-from IR_magnetic_field import get_magnetic_field_ALS,get_magnetic_field_ALSU
+from IR_magnetic_field import get_magnetic_field_ALS, get_magnetic_field_ALSU
 
 def calculate_flux(y,B,M=0,energy_GeV=2.0):
     # analyse M1
