@@ -73,8 +73,8 @@ part_beam.arStatMom2[10]     = 9.025e-07
 # SrwMagDipole("MagALSBZ_fld",2,0.4275, 0.305, 10, -0.16)   # //RB7-8
 # SrwMagDipole("MagALSBZ_fld",2, 0.905,0.5, 10, 0.849)      #    //Dipole8
 
-magnetic_structure1 = SRWLMagFldM(_G=0.867, _m=1, _n_or_s='n', _Leff=0.5)
-magnetic_structure2 = SRWLMagFldM(_G=-0.16, _m=1, _n_or_s='n', _Leff=0.305)
+magnetic_structure1 = SRWLMagFldM(_G=0.000867, _m=1, _n_or_s='n', _Leff=0.5)
+magnetic_structure2 = SRWLMagFldM(_G=-0.00016, _m=1, _n_or_s='n', _Leff=0.305)
 magnetic_structure3 = SRWLMagFldM(_G=0.849, _m=1, _n_or_s='n', _Leff=0.5)
 
 magnetic_field_container = SRWLMagFldC(_arMagFld=[magnetic_structure1,magnetic_structure2,magnetic_structure3],

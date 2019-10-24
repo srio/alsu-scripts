@@ -228,7 +228,7 @@ def run_beamline(beam, incidence=45.0, radius=1.0, y_shift=0.0):
 
     return beam,oe1
 
-def run_preprocessor(enerMin=1000.0,enerMax=1000.1,electron_energy=1.9):
+def run_preprocessor(enerMin=1000.0,enerMax=1000.1,electron_energy=1.9,file_field="BM_only7.b"):
     #
     # script to run the wiggler preprocessor (created by ShadowOui:Wiggler)
     #
@@ -250,7 +250,7 @@ def run_preprocessor(enerMin=1000.0,enerMax=1000.1,electron_energy=1.9):
 
     (traj, pars) = srfunc.wiggler_trajectory(
         b_from=1,
-        inData="BM_multi.b",
+        inData=file_field,
         nPer=1,
         nTrajPoints=501,
         ener_gev=electron_energy,
@@ -294,7 +294,7 @@ def run_preprocessor(enerMin=1000.0,enerMax=1000.1,electron_energy=1.9):
 
 
 
-def run_source_wiggler(select_bm=1,electron_energy=1.9):
+def run_source_wiggler(electron_energy=1.9):
     #
     # initialize shadow3 source (oe0) and beam
     #
@@ -354,21 +354,21 @@ def run_source_wiggler(select_bm=1,electron_energy=1.9):
 
     beam.genSource(oe0)
 
-    #
-    # select a part
-    #
-    if select_bm == 1:
-        y = beam.rays[:, 1]
-        ibad = numpy.where(y > -0.2)
-        beam.rays[ibad, 6:9] = 0.0
-        beam.rays[ibad, 15:18] = 0.0
-    elif select_bm == 2:
-        pass
-    elif select_bm == 3:
-        y = beam.rays[:, 1]
-        ibad = numpy.where(y < 0.2)
-        beam.rays[ibad, 6:9] = 0.0
-        beam.rays[ibad, 15:18] = 0.0
+    # #
+    # # select a part
+    # #
+    # if select_bm == 1:
+    #     y = beam.rays[:, 1]
+    #     ibad = numpy.where(y > -0.2)
+    #     beam.rays[ibad, 6:9] = 0.0
+    #     beam.rays[ibad, 15:18] = 0.0
+    # elif select_bm == 2:
+    #     pass
+    # elif select_bm == 3:
+    #     y = beam.rays[:, 1]
+    #     ibad = numpy.where(y < 0.2)
+    #     beam.rays[ibad, 6:9] = 0.0
+    #     beam.rays[ibad, 15:18] = 0.0
 
     return beam
 
@@ -379,12 +379,11 @@ if __name__ == "__main__":
 
     set_qt()
 
-    wiggler_or_bm = 4 # 0=wiggler, 1=Mag7, 2=Antibend, 3=Mag8, 4=ALS
-    select_bm = 1 # this is only for wiggler selection: 1=Mag7 2=antibend(to check), 3=Mag8
+    wiggler_or_bm = 0 # 0=wiggler, 1=Mag7, 2=Antibend, 3=Mag8, 4=ALS
     use_adaptive = True
 
 
-    Incidence = numpy.linspace(55, 80, 151)
+    Incidence = numpy.linspace(65, 80, 151)
     # Incidence = numpy.linspace(80, 89, 50)
 
     Radius   = numpy.zeros_like(Incidence)
@@ -403,12 +402,12 @@ if __name__ == "__main__":
     # Half - Divergence M2: 0.031841706445325
 
     if wiggler_or_bm == 0:
-        run_preprocessor(enerMin=1000.0, enerMax=1001.0)
-        beam = run_source_wiggler(select_bm=select_bm,electron_energy=2.0)
+        run_preprocessor(enerMin=1000.0, enerMax=1001.0,file_field="BM_only7.b")
+        beam = run_source_wiggler(electron_energy=2.0)
 
         y = beam.getshonecol(2)
         w = beam.getshonecol(23)
-        y_shift = numpy.average(y, weights=w)
+        y_shift = 0.0 # numpy.average(y, weights=w)
     elif wiggler_or_bm == 1:
         y_shift =  0.0 # -0.4778 # 0.0
         magnetic_radius=-7.615618611829955
@@ -419,7 +418,7 @@ if __name__ == "__main__":
     elif wiggler_or_bm == 2:
         y_shift =  0.0
         magnetic_radius= 41.695511899769 ## attention to sign reversed!!
-        horizontal_divergence = 2*0.0038973019540000007
+        horizontal_divergence = 2*0.003657467
         beam = run_source_bm(y_shift=y_shift,magnetic_radius=magnetic_radius,
                              horizontal_divergence=horizontal_divergence,
                              electron_energy=2.0)

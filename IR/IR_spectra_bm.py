@@ -50,8 +50,7 @@ if __name__ == "__main__":
     # full emission
     #
 
-
-    HOR_DIV_MRAD = [69, 2e3 * 0.0328, 2e3 * 0.003897]  # not used if VER_DIV = 0
+    HOR_DIV_MRAD = [69, 2e3 * 0.0328, 2e3 * 0.0036574]  # not used if VER_DIV = 0
     # HOR_DIV_MRAD    = [1.0]*3
 
     VER_DIV_MRAD    = [1.0, 1.0, 1.0]

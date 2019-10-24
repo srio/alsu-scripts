@@ -4,8 +4,12 @@
 import Shadow
 import numpy
 
+def get_R(p_foc,q_foc,incidence):
+    mm = (1.0 / p_foc + 1.0 / q_foc)
+    return 2 / (numpy.cos(incidence * numpy.pi / 180)) / mm
 
-def run_shadow(incidence=67.7):
+
+def run_shadow(incidence=67.7,radius=1.0):
     #
     # Python script to run shadow3. Created automatically with ShadowTools.make_python_script_from_list().
     #
@@ -29,29 +33,29 @@ def run_shadow(incidence=67.7):
     #  https://raw.githubusercontent.com/srio/shadow3/master/docs/oe.nml
     #
 
-    oe0.BENER = 1.9
-    oe0.EPSI_X = 1.989e-09
-    oe0.EPSI_Z = 3.007e-11
+    oe0.BENER = 2.0
+    oe0.EPSI_X = 9.083640294507485e-11
+    oe0.EPSI_Z = 7.522639164548569e-10
     oe0.FDISTR = 6
     oe0.FSOURCE_DEPTH = 4
     oe0.F_COLOR = 3
     oe0.F_PHOT = 0
-    oe0.HDIV1 = 0.035
-    oe0.HDIV2 = 0.035
+    oe0.HDIV1 = 0.033
+    oe0.HDIV2 = 0.033
     oe0.ISTAR1 = 5676561
     oe0.NCOL = 0
-    oe0.NPOINT = 30000
+    oe0.NPOINT = 100000
     oe0.N_COLOR = 0
     oe0.PH1 = 0.4
     oe0.PH2 = 0.401
     oe0.POL_DEG = 0.0
-    oe0.R_ALADDIN = -5.0
-    oe0.R_MAGNET = -5.0
+    oe0.R_ALADDIN = -7.615618611829955
+    oe0.R_MAGNET = -7.615618611829955
     oe0.SIGDIX = 0.0
     oe0.SIGDIZ = 0.0
-    oe0.SIGMAX = 3.9e-05
+    oe0.SIGMAX = 4.8785243670601876e-06
     oe0.SIGMAY = 0.0
-    oe0.SIGMAZ = 3.1e-05
+    oe0.SIGMAZ = 4.120922226880775e-05
     oe0.VDIV1 = 0.05
     oe0.VDIV2 = 0.05
     oe0.WXSOU = 0.0
@@ -63,10 +67,8 @@ def run_shadow(incidence=67.7):
     oe1.FCYL = 1
     oe1.FMIRR = 1
     oe1.FWRITE = 1
-    oe1.F_DEFAULT = 0
-    oe1.SIMAG = 4.29
-    oe1.SSOUR = 1.58
-    oe1.THETA = incidence
+    oe1.F_EXT = 1
+    oe1.RMIRR = radius
     oe1.T_IMAGE = 0.0
     oe1.T_INCIDENCE = incidence
     oe1.T_REFLECTION = incidence
@@ -136,20 +138,21 @@ if __name__ == "__main__":
 
     set_qt()
 
-    Grazing = numpy.linspace(15, 30.0, 151)
+    Grazing = numpy.linspace(10, 20.0, 151)
 
     Radius = numpy.zeros_like(Grazing)
     Fwhm = numpy.zeros_like(Grazing)
     Std = numpy.zeros_like(Grazing)
 
     import h5py
-    print(">>>>>>>>>>>>>>>>>>>>",h5py.version.version)
+
     h = H5SimpleWriter.initialize_file("IR_BM_shadow3_scan.h5")
     Incidence = 90.0 - Grazing
     
     for i,incidence in enumerate(Incidence):
         grazing = 90.0 - incidence
-        beam,oe1 = run_shadow(incidence=incidence)
+        radius = get_R(1.58,4.29,incidence)
+        beam,oe1 = run_shadow(incidence=incidence,radius=radius)
         # Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=101, nolost=1, title="Real space")
 
         tkt = beam.histo1(1,nbins=201,nolost=1) # xrange=[-4000e-6,4000e-6],
@@ -182,5 +185,15 @@ if __name__ == "__main__":
     imin = Std.argmin()
     optimizedIncidence = Incidence[imin]     #
     optimizedRadius    = Radius[imin]        #
+
+
+
+    beam,oe1 = run_shadow(incidence=optimizedIncidence,radius=optimizedRadius)
+
+
+    tkt = Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=201, nolost=1, ref=23,
+                              # xrange=[-5e-3*5,5e-3*5],
+                              title="theta: %f, R: %f"%(optimizedIncidence,optimizedRadius))
+
     print("best incidence angle: %f deg, grazing %f deg"%(optimizedIncidence,90-optimizedIncidence))
     print("Radius: %f m "%optimizedRadius)
