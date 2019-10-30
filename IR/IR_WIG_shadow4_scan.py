@@ -1,16 +1,111 @@
 #
 # Python script to run shadow3. Created automatically with ShadowTools.make_python_script_from_list().
 #
-import Shadow
 import numpy
+import time
+from srxraylib.plot.gol import plot,plot_scatter, set_qt
 
+from shadow4.syned.magnetic_structure_1D_field import MagneticStructure1DField
+
+from syned.storage_ring.electron_beam import ElectronBeam
+
+from shadow4.sources.wiggler.source_wiggler import SourceWiggler
+from shadow4.compatibility.beam3 import Beam3
+
+from shadow4.beam.beam import Beam
+
+import Shadow
+
+from scipy.ndimage import gaussian_filter1d
 
 def get_R(p_foc,q_foc,incidence):
     mm = (1.0 / p_foc + 1.0 / q_foc)
     return 2 / (numpy.cos(incidence * numpy.pi / 180)) / mm
 
+def run_source_wiggler4(electron_energy=2.0,
+                        filename ="/home/manuel/Oasys/BM_only7.b",
+                        use_emittances=True,
+                        e_min = 1000.0,
+                        e_max = 1000.1,
+                        NRAYS = 5000,):
 
-def run_source_wiggler():
+
+    wigFile = "xshwig.sha"
+    inData = ""
+
+    nTrajPoints = 501
+    ener_gev = electron_energy
+    per = 0.5
+    kValue = 4
+    trajFile = ""
+    shift_x_flag = 0
+    shift_x_value = 0.0
+    shift_betax_flag = 0
+    shift_betax_value = 0.0
+
+
+    sw = SourceWiggler()
+
+    #
+    # syned
+    #
+
+
+    syned_electron_beam = ElectronBeam(energy_in_GeV=electron_energy,
+                                       current=0.5,
+                                       moment_xx=   (7e-6          )**2    , #(39e-6)**2,
+                                       moment_xpxp= (70e-12 / 7e-6 )**2    , #(2000e-12 / 51e-6)**2,
+                                       moment_yy=   (10e-6         )**2    , #(31e-6)**2,
+                                       moment_ypyp= (70e-12 / 10e-6)**2    , #(30e-12 / 31e-6)**2,
+                                       )
+
+    # conventional wiggler
+    # syned_wiggler = Wiggler(K_vertical=kValue,K_horizontal=0.0,period_length=per,number_of_periods=nPer)
+
+    # B from file
+
+
+    syned_wiggler = MagneticStructure1DField.initialize_from_file(filename)
+    # syned_wiggler.add_spatial_shift(-0.478)
+    # syned_wiggler.flip_B()
+
+
+
+    if e_min == e_max:
+        ng_e = 1
+    else:
+        ng_e = 10
+
+    sourcewiggler = SourceWiggler(name="test",
+                    syned_electron_beam=syned_electron_beam,
+                    syned_wiggler=syned_wiggler,
+                    flag_emittance=use_emittances,
+                    emin=e_min,
+                    emax=e_max,
+                    ng_e=ng_e,
+                    ng_j=nTrajPoints)
+
+
+    sourcewiggler.set_electron_initial_conditions_by_label(velocity_label="value_at_zero",
+                                                           position_label="value_at_zero",)
+
+
+    print(sourcewiggler.info())
+
+    t00 = time.time()
+    rays = sourcewiggler.calculate_rays(NRAYS=NRAYS)
+    t11 = time.time() - t00
+    print(">>>> time for %d rays: %f s, %f min, " % (NRAYS, t11, t11 / 60))
+
+    beam = Beam3.initialize_from_array(rays)
+
+
+    return beam
+
+
+
+
+def run_source_wiggler3():
     from srxraylib.sources import srfunc
     (traj, pars) = srfunc.wiggler_trajectory(
         b_from=1,
@@ -198,6 +293,7 @@ def run_beamline(beam, incidence=45.0, radius=1.0):
 
 
 if __name__ == "__main__":
+
     import h5py
     from srxraylib.plot.gol import plot, set_qt
     from srxraylib.util.h5_simple_writer import H5SimpleWriter
@@ -217,10 +313,10 @@ if __name__ == "__main__":
     Position = numpy.zeros_like(Incidence)
 
 
-    h = H5SimpleWriter.initialize_file("IR_WIG_shadow3_scan.h5")
+    h = H5SimpleWriter.initialize_file("IR_WIG_shadow4_scan.h5")
 
 
-    beam = run_source_wiggler()
+    beam = run_source_wiggler4()
 
     beam_source = beam.duplicate()
 

@@ -34,8 +34,8 @@ def run_shadow(incidence=67.7,radius=1.0):
     #
 
     oe0.BENER = 2.0
-    oe0.EPSI_X = 9.083640294507485e-11
-    oe0.EPSI_Z = 7.522639164548569e-10
+    oe0.EPSI_X = 70e-12
+    oe0.EPSI_Z = 70e-12
     oe0.FDISTR = 6
     oe0.FSOURCE_DEPTH = 4
     oe0.F_COLOR = 3
@@ -53,9 +53,9 @@ def run_shadow(incidence=67.7,radius=1.0):
     oe0.R_MAGNET = -7.615618611829955
     oe0.SIGDIX = 0.0
     oe0.SIGDIZ = 0.0
-    oe0.SIGMAX = 4.8785243670601876e-06
+    oe0.SIGMAX = 7e-06
     oe0.SIGMAY = 0.0
-    oe0.SIGMAZ = 4.120922226880775e-05
+    oe0.SIGMAZ = 10e-06
     oe0.VDIV1 = 0.05
     oe0.VDIV2 = 0.05
     oe0.WXSOU = 0.0
