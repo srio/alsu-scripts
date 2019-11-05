@@ -1,0 +1,24 @@
+{
+    "CLASS_NAME": "LightSource",
+    "name": "Undefined",
+    "electron_beam": {
+        "CLASS_NAME": "ElectronBeam",
+        "energy_in_GeV": 2.0,
+        "energy_spread": 0.0011,
+        "current": 0.5,
+        "number_of_bunches": 400,
+        "moment_xx": 1.4641e-10,
+        "moment_xxp": 0.0,
+        "moment_xpxp": 3.2489999999999996e-11,
+        "moment_yy": 2.1609e-10,
+        "moment_yyp": 0.0,
+        "moment_ypyp": 2.2089999999999998e-11
+    },
+    "magnetic_structure": {
+        "CLASS_NAME": "Undulator",
+        "K_vertical": 1.414,
+        "K_horizontal": 0.0,
+        "period_length": 0.019,
+        "number_of_periods": 210.0
+    }
+}

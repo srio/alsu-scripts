@@ -1,4 +1,15 @@
 #
+# to profile it:
+#
+
+#
+# pip install snakeviz
+# pip install cprofilev
+# pip install --upgrade pip
+# python -B -m cProfile -o output.prof IR_WIG_shadow4_scan.py
+# snakeviz output.prof
+
+#
 # Python script to run shadow3. Created automatically with ShadowTools.make_python_script_from_list().
 #
 import numpy
@@ -22,12 +33,16 @@ def get_R(p_foc,q_foc,incidence):
     mm = (1.0 / p_foc + 1.0 / q_foc)
     return 2 / (numpy.cos(incidence * numpy.pi / 180)) / mm
 
-def run_source_wiggler4(electron_energy=2.0,
-                        filename ="/home/manuel/Oasys/BM_only7.b",
-                        use_emittances=True,
-                        e_min = 1000.0,
-                        e_max = 1000.1,
-                        NRAYS = 5000,):
+def get_Rsagittal(p_foc,q_foc,incidence):
+    mm = (1.0 / p_foc + 1.0 / q_foc)
+    return 2 * (numpy.cos(incidence * numpy.pi / 180)) / mm
+
+def run_source_wiggler_shadow4(electron_energy=2.0,
+                               filename ="/home/manuel/Oasys/BM_only7.b",
+                               use_emittances=True,
+                               e_min = 1000.0,
+                               e_max = 1000.1,
+                               NRAYS = 5000, ):
 
 
     wigFile = "xshwig.sha"
@@ -105,7 +120,7 @@ def run_source_wiggler4(electron_energy=2.0,
 
 
 
-def run_source_wiggler3():
+def run_source_wiggler_shadow3():
     from srxraylib.sources import srfunc
     (traj, pars) = srfunc.wiggler_trajectory(
         b_from=1,
@@ -218,7 +233,7 @@ def run_source_wiggler3():
 
 
 
-def run_beamline(beam, incidence=45.0, radius=1.0):
+def run_beamline_moreno(beam, incidence=45.0, radius=1.0):
 
     # write (1) or not (0) SHADOW files start.xx end.xx star.xx
     iwrite = 0
@@ -291,20 +306,143 @@ def run_beamline(beam, incidence=45.0, radius=1.0):
     return beam,oe1
 
 
+def run_beamline_toroid(beam,incidence=45.0,radius_major=10.0, radius_minor=1.0, p=10.0, q=10.0):
+
+    iwrite = 0
+
+    oe1 = Shadow.OE()
+    oe2 = Shadow.OE()
+
+    #
+    # Define variables. See meaning of variables in:
+    #  https://raw.githubusercontent.com/srio/shadow3/master/docs/source.nml
+    #  https://raw.githubusercontent.com/srio/shadow3/master/docs/oe.nml
+    #
+
+
+    oe1.ALPHA = 90.0
+    oe1.DUMMY = 100.0
+    oe1.FMIRR = 3
+    oe1.FWRITE = 1
+    oe1.F_EXT = 1
+    oe1.R_MAJ = radius_major
+    oe1.R_MIN = radius_minor
+    oe1.T_INCIDENCE = incidence
+    oe1.T_REFLECTION = incidence
+    oe1.T_SOURCE = p # 1.58 # 2.935
+    oe1.T_IMAGE = q # 4.29 # 2.935
+
+    oe2.ALPHA = 90.0
+    oe2.DUMMY = 100.0
+    oe2.FWRITE = 1
+    oe2.F_REFRAC = 2
+    oe2.T_IMAGE = 0.0
+    oe2.T_INCIDENCE = 0.0
+    oe2.T_REFLECTION = 180.0
+    oe2.T_SOURCE = 0.0
+
+
+
+    #
+    # run optical element 1
+    #
+    print("    Running optical element: %d" % (1))
+    if iwrite:
+        oe1.write("start.01")
+
+    beam.traceOE(oe1, 1)
+
+    if iwrite:
+        oe1.write("end.01")
+        beam.write("star.01")
+
+    #
+    # run optical element 2
+    #
+    print("    Running optical element: %d" % (2))
+    if iwrite:
+        oe2.write("start.02")
+
+    beam.traceOE(oe2, 2)
+
+    if iwrite:
+        oe2.write("end.02")
+        beam.write("star.02")
+
+    # Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=101, nolost=1, title="Real space")
+    # Shadow.ShadowTools.plotxy(beam,1,4,nbins=101,nolost=1,title="Phase space X")
+    # Shadow.ShadowTools.plotxy(beam,3,6,nbins=101,nolost=1,title="Phase space Z")
+
+
+    return beam, oe1
 
 if __name__ == "__main__":
 
-    import h5py
     from srxraylib.plot.gol import plot, set_qt
     from srxraylib.util.h5_simple_writer import H5SimpleWriter
 
     set_qt()
 
 
-    use_adaptive = True
+    do_calculate_source = True
+    do_scan = False
+    write_h5 = True
+    do_plot = True
+    all_magnets = False
+    mirror_config = "toroid"  # moreno or toroid
+
+    #
+    #
+    #
 
 
-    Incidence = numpy.linspace(70, 80, 151)
+    if write_h5:
+        h = H5SimpleWriter.initialize_file("IR_WIG_shadow4_scan.h5")
+
+
+
+    if do_calculate_source:
+        beam = run_source_wiggler_shadow4(electron_energy=2.0,
+                                          filename ="/home/manuel/Oasys/BM_multi7.b",
+                                          use_emittances=True,
+                                          e_min = 0.1,
+                                          e_max = 0.1,
+                                          NRAYS = 1000, )
+
+        beam.write("/home/manuel/Oasys/begin.dat")
+    else:
+        beam = Shadow.Beam()
+        beam.load("/home/manuel/Oasys/begin.dat")
+
+
+    if all_magnets == False:
+        y = beam.rays[:, 1]
+
+        ibad = numpy.where(y < -0.3)
+        beam.rays[ibad, 6:9] = 0.0
+        beam.rays[ibad, 15:18] = 0.0
+
+        ibad = numpy.where(y > 0.3)
+        beam.rays[ibad, 6:9] = 0.0
+        beam.rays[ibad, 15:18] = 0.0
+
+    beam_source = beam.duplicate()
+
+    if do_plot:
+        Shadow.ShadowTools.plotxy(beam,2,1,nbins=200)
+
+    if mirror_config == "moreno":
+        p_foc = 1.58
+        q_foc = 4.290000
+        Incidence = numpy.linspace(70, 80, 151)
+    elif mirror_config == "toroid":
+        p_foc =  2.935 # 5.87 / 2 # 1.58 #
+        q_foc =  2.935 # 5.87 / 2 # 4.29 #
+        # Incidence = numpy.linspace(73, 77, 151)
+        # Incidence = numpy.linspace(70, 89, 151)
+        Incidence = numpy.linspace(12, 88, 151)
+
+
 
 
     Radius   = numpy.zeros_like(Incidence)
@@ -312,79 +450,93 @@ if __name__ == "__main__":
     Std      = numpy.zeros_like(Incidence)
     Position = numpy.zeros_like(Incidence)
 
-
-    h = H5SimpleWriter.initialize_file("IR_WIG_shadow4_scan.h5")
-
-
-    beam = run_source_wiggler4()
-
-    beam_source = beam.duplicate()
-
-    Shadow.ShadowTools.plotxy(beam,2,1,nbins=200)
+    if do_scan:
+        for i,incidence in enumerate(Incidence):
 
 
-    for i,incidence in enumerate(Incidence):
+            R = get_R(p_foc,q_foc,incidence)
 
-        p_foc = 1.58
-        q_foc = 4.290000
-        R = get_R(p_foc,q_foc,incidence)
+            beam = None
+            beam = beam_source.duplicate()
 
-        beam = None
-        beam = beam_source.duplicate()
+            print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> R: ",R)
 
-        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> R: ",R)
+            if mirror_config == "moreno":
+                beam, oe1 = run_beamline_moreno(beam, incidence=incidence, radius=R)
+            elif mirror_config == "toroid":
+                Rsag = get_Rsagittal(p_foc, q_foc, incidence)
+                beam, oe1 = run_beamline_toroid(beam, incidence=incidence, radius_major=R, radius_minor=Rsag,
+                      p=p_foc,q=q_foc)
 
-        beam, oe1 = run_beamline(beam, incidence=incidence, radius=R)
 
+            tkt = beam.histo1(1,ref=23,nbins=501,nolost=1,xrange=[-4000e-6,4000e-6])
+            if tkt["fwhm"] is None:
+                tkt["fwhm"] = 0.0
+            imax = tkt["histogram"].argmax()
+            Position[i] = 1e6 * tkt["bin_center"][imax]
 
+            print(incidence,oe1.RMIRR,1e6*tkt["fwhm"])
+            Radius[i] = R
+            Fwhm[i] = 1e6*tkt["fwhm"]
+            Std[i] = 1e6 * beam.get_standard_deviation(1,nolost=1,ref=23)
 
-        tkt = beam.histo1(1,ref=23,nbins=201,nolost=1) # xrange=[-4000e-6,4000e-6],
-        if tkt["fwhm"] is None:
-            tkt["fwhm"] = 0.0
-        imax = tkt["histogram"].argmax()
-        Position[i] = 1e6 * tkt["bin_center"][imax]
-
-        print(incidence,oe1.RMIRR,1e6*tkt["fwhm"])
-        Radius[i] = R
-        Fwhm[i] = 1e6*tkt["fwhm"]
-        Std[i] = 1e6 * beam.get_standard_deviation(1,nolost=1,ref=23)
-
-        h.create_entry("iteration incidence %f" % incidence, nx_default="histogram")
-        h.add_dataset(1e6*tkt["bin_path"],tkt["histogram_path"], dataset_name="histogram",entry_name="iteration incidence %f" % incidence,
-                      title_x="X / um",title_y="intensity / a.u.")
+            if write_h5:
+                h.create_entry("iteration incidence %f" % incidence, nx_default="histogram")
+                h.add_dataset(1e6*tkt["bin_path"],tkt["histogram_path"], dataset_name="histogram",entry_name="iteration incidence %f" % incidence,
+                              title_x="X / um",title_y="intensity / a.u.")
 
 
 
-    plot(Incidence, Radius ,xtitle="Incidence/deg",ytitle="R/m",show=False)
-    plot(Incidence, Fwhm,Incidence, Std,xtitle="Incidence/deg",ytitle="FWHM/um",legend=["fwhm","std"],show=False)
-    plot(Incidence, Position, xtitle="Incidence/deg", ytitle="Position/um")
+        if do_plot:
+            plot(Incidence, Radius ,xtitle="Incidence/deg",ytitle="R/m",show=False)
+            plot(Incidence, Fwhm,Incidence, Std,xtitle="Incidence/deg",ytitle="FWHM/um",legend=["fwhm","std"],show=False)
+            plot(Incidence, Position, xtitle="Incidence/deg", ytitle="Position/um")
 
-    h.create_entry("scan results", nx_default="Fwhm")
-    h.add_dataset(Incidence, Fwhm, dataset_name="Fwhm", entry_name="scan results",
-                  title_x="incidence angle / deg", title_y="fwhm / um")
-    h.add_dataset(Incidence, Std, dataset_name="Std", entry_name="scan results",
-                  title_x="incidence angle / deg", title_y="std / um")
-    h.add_dataset(Radius, Fwhm, dataset_name="Radius", entry_name="scan results",
-                  title_x="radius / m", title_y="fwhm / um")
+        if write_h5:
+            h.create_entry("scan results", nx_default="Fwhm")
+            h.add_dataset(Incidence, Fwhm, dataset_name="Fwhm", entry_name="scan results",
+                          title_x="incidence angle / deg", title_y="fwhm / um")
+            h.add_dataset(Incidence, Std, dataset_name="Std", entry_name="scan results",
+                          title_x="incidence angle / deg", title_y="std / um")
+            h.add_dataset(Radius, Fwhm, dataset_name="Radius", entry_name="scan results",
+                          title_x="radius / m", title_y="fwhm / um")
 
-    h.add_dataset(Incidence, Position, dataset_name="PositionCenter", entry_name="scan results",
-                  title_x="incidence angle / deg", title_y="center / um")
+            h.add_dataset(Incidence, Position, dataset_name="PositionCenter", entry_name="scan results",
+                          title_x="incidence angle / deg", title_y="center / um")
 
-    for key in tkt.keys():
-        print(key)
+        for key in tkt.keys():
+            print(key)
 
 
-    imin = Std.argmin()
-    optimizedIncidence = Incidence[imin]     #
-    optimizedRadius    = Radius[imin]        #
+        imin = Std.argmin()
+        optimizedIncidence = Incidence[imin]     #
+    else:
+        optimizedIncidence = 45.0 # 85.75 # 74.946667 - 30e-2
+
+
+    optimizedRadius    = get_R(p_foc=p_foc,q_foc=q_foc,incidence=optimizedIncidence)
+
 
     beam = None
     beam = beam_source.duplicate()
-    beam, oe1 = run_beamline(beam, incidence=optimizedIncidence, radius=optimizedRadius)
+    if mirror_config == "moreno":
+        beam, oe1 = run_beamline_moreno(beam, incidence=optimizedIncidence, radius=optimizedRadius)
+    elif mirror_config == "toroid":
+        Rsag = get_Rsagittal(p_foc, q_foc, optimizedIncidence)
+        beam, oe1 = run_beamline_toroid(beam, incidence=optimizedIncidence, radius_major=optimizedRadius, radius_minor=Rsag,
+                                        p=p_foc,q=q_foc)
 
-    tkt = Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=201, nolost=1, ref=23,
-                                    # xrange=[-5e-3*5,5e-3*5],
-                                    title="theta: %f, R: %f" % (optimizedIncidence, optimizedRadius))
+    if do_plot:
+        tkt = Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=201, nolost=1, ref=23,
+                                        xrange=[-200e-6,200e-6],
+                                        title="theta: %f, R: %f" % (optimizedIncidence, optimizedRadius))
 
     print("best incidence angle: %f deg, grazing %f deg" % (optimizedIncidence, 90 - optimizedIncidence))
     print("Radius: %f m " % optimizedRadius)
+
+    if mirror_config == "toroid":
+
+        print("Sagittal Radius: %f m " % Rsag)
+        r1 = get_R(p_foc, q_foc, 45)
+        r2 = get_Rsagittal(p_foc, q_foc, 45)
+        print("Radii ar 45 deg: ",r1,r2)
