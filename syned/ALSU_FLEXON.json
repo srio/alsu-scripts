@@ -1,6 +1,6 @@
 {
     "CLASS_NAME": "LightSource",
-    "name": "Undefined",
+    "name": "FLEXON",
     "electron_beam": {
         "CLASS_NAME": "ElectronBeam",
         "energy_in_GeV": 2.0,
@@ -18,7 +18,7 @@
         "CLASS_NAME": "Undulator",
         "K_vertical": 2.144,
         "K_horizontal": 0.0,
-        "period_length": 0.0299,
+        "period_length": 0.0288,
         "number_of_periods": 138.0
     }
 }

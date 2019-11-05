@@ -1,6 +1,6 @@
 {
     "CLASS_NAME": "LightSource",
-    "name": "Undefined",
+    "name": "MAESTRO",
     "electron_beam": {
         "CLASS_NAME": "ElectronBeam",
         "energy_in_GeV": 2.0,
