@@ -80,7 +80,7 @@ part_beam.arStatMom2[10]     = 9.025e-07
 magnetic_structure1 = SRWLMagFldM(_G=-0.16, _m=1, _n_or_s='n', _Leff=0.305)
 magnetic_structure2 = SRWLMagFldM(_G=0.867,    _m=1, _n_or_s='n', _Leff=0.500)
 magnetic_structure3 = SRWLMagFldM(_G=-0.16, _m=1, _n_or_s='n', _Leff=0.305)
-magnetic_structure4 = SRWLMagFldM(_G=0.000849, _m=1, _n_or_s='n', _Leff=0.500)
+magnetic_structure4 = SRWLMagFldM(_G=0.849, _m=1, _n_or_s='n', _Leff=0.500)
 
 
 magnetic_field_container = SRWLMagFldC(_arMagFld=[magnetic_structure1,magnetic_structure2,magnetic_structure3,magnetic_structure4],
@@ -112,22 +112,71 @@ initial_mesh = deepcopy(wfr.mesh)
 # srwl.CalcElecFieldSR(wfr, 0, magnetic_field_container, [2,0.001,0.0,0.0,20000,1,0.0])
 srwl.CalcElecFieldSR(wfr, 0, magnetic_field_container, [2,0.001,-0.75,1.25,20000,1,0.0])
 
-mesh0 = deepcopy(wfr.mesh)
-arI = array('f', [0]*mesh0.nx*mesh0.ny)
-srwl.CalcIntFromElecField(arI, wfr, 6, 0, 3, mesh0.eStart, 0, 0)
-arIx = array('f', [0]*mesh0.nx)
-srwl.CalcIntFromElecField(arIx, wfr, 6, 0, 1, mesh0.eStart, 0, 0)
-arIy = array('f', [0]*mesh0.ny)
-srwl.CalcIntFromElecField(arIy, wfr, 6, 0, 2, mesh0.eStart, 0, 0)
-#save ascii file with intensity
-#srwl_uti_save_intens_ascii(arI, mesh0, <file_path>)
-plotMesh0x = [1000*mesh0.xStart, 1000*mesh0.xFin, mesh0.nx]
-plotMesh0y = [1000*mesh0.yStart, 1000*mesh0.yFin, mesh0.ny]
-uti_plot2d1d (arI, plotMesh0x, plotMesh0y, labels=['Horizontal Position [mm]', 'Vertical Position [mm]', 'Intensity Before Propagation'])
-uti_plot_show()
-
 
 print(">>>>>>>>>>>>>>>>>>>>>>>",wfr.Rx,wfr.Ry)
+
+
+
+#
+# native plots
+#
+if False:
+    mesh0 = deepcopy(wfr.mesh)
+    arI = array('f', [0]*mesh0.nx*mesh0.ny)
+    srwl.CalcIntFromElecField(arI, wfr, 6, 0, 3, mesh0.eStart, 0, 0)
+    arIx = array('f', [0]*mesh0.nx)
+    srwl.CalcIntFromElecField(arIx, wfr, 6, 0, 1, mesh0.eStart, 0, 0)
+    arIy = array('f', [0]*mesh0.ny)
+    srwl.CalcIntFromElecField(arIy, wfr, 6, 0, 2, mesh0.eStart, 0, 0)
+    #save ascii file with intensity
+    #srwl_uti_save_intens_ascii(arI, mesh0, <file_path>)
+    plotMesh0x = [1000*mesh0.xStart, 1000*mesh0.xFin, mesh0.nx]
+    plotMesh0y = [1000*mesh0.yStart, 1000*mesh0.yFin, mesh0.ny]
+    uti_plot2d1d (arI, plotMesh0x, plotMesh0y, labels=['Horizontal Position [mm]', 'Vertical Position [mm]', 'Intensity Before Propagation'])
+    uti_plot_show()
+
+#
+# oasys plots
+#
+from srxraylib.plot.gol import plot_image, plot
+from wofrysrw.propagator.wavefront2D.srw_wavefront import SRWWavefront
+import copy
+
+self = wfr
+w_srw_oasys = SRWWavefront(_arEx=copy.deepcopy(self.arEx),
+                         _arEy=copy.deepcopy(self.arEy),
+                         _typeE=self.numTypeElFld,
+                         _eStart=self.mesh.eStart,
+                         _eFin=self.mesh.eFin,
+                         _ne=self.mesh.ne,
+                         _xStart=self.mesh.xStart,
+                         _xFin=self.mesh.xFin,
+                         _nx=self.mesh.nx,
+                         _yStart=self.mesh.yStart,
+                         _yFin=self.mesh.yFin,
+                         _ny=self.mesh.ny,
+                         _zStart=self.mesh.zStart,
+                         _partBeam=self.partBeam)
+
+
+
+w_wofry = w_srw_oasys.toGenericWavefront()
+
+
+
+
+x = w_wofry.get_coordinate_x()
+y = w_wofry.get_coordinate_y()
+intensity = w_wofry.get_intensity()
+print("Total intensity: %g photons"%(intensity.sum()*1e6*(x[1]-x[0])*(y[1]-y[0])))
+
+
+plot_image(intensity,x,y,show=0,aspect='auto')
+
+plot(x/distance,intensity.sum(axis=1)*(y[1]*y[0]),xtitle="X' [rad]",ytitle = "photons/s/m",show=0)
+
+plot(y/distance,intensity.sum(axis=0)*(x[1]*x[0]),xtitle="Y' [rad]",ytitle = "photons/s/m",show=1)
+
 
 from wofrysrw.util.srw_hdf5 import save_wfr_2_hdf5
 # save_wfr_2_hdf5(wfr,"/home/manuel/Oasys/wfr_ir_0p1_all_magnets.h5",subgroupname="wfr",intensity=True,phase=True,overwrite=True)

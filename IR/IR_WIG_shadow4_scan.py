@@ -376,6 +376,33 @@ def run_beamline_toroid(beam,incidence=45.0,radius_major=10.0, radius_minor=1.0,
 
     return beam, oe1
 
+
+def flux_vs_aperture(beam,nolost=1,rmax=None):
+    x = beam.getshonecol(1,nolost=nolost)
+    z = beam.getshonecol(2, nolost=nolost)
+    r = numpy.sqrt(x**2 + z**2)
+    intensity = beam.getshonecol(23, nolost=nolost)
+
+    npoints = 100
+    if rmax is None:
+        rmax = 1.1*r.max()
+    R = numpy.linspace(0,rmax,npoints)
+    INT = numpy.zeros_like(R)
+    for i in range(npoints):
+        igood = numpy.argwhere( r <= R[i])
+        if len(igood) == 0:
+            INT[i] = 0
+        else:
+            INT[i] = intensity[igood].sum()
+        print(">>>>>>", i, len(igood),INT[i],intensity.sum())
+
+    plot(R,INT,xlog=1)
+
+
+
+
+
+
 if __name__ == "__main__":
 
     from srxraylib.plot.gol import plot, set_qt
@@ -384,10 +411,10 @@ if __name__ == "__main__":
     set_qt()
 
 
-    do_calculate_source = True
+    do_calculate_source = False
     do_scan = False
-    write_h5 = True
-    do_plot = True
+    write_h5 = False
+    do_plot = False
     all_magnets = False
     mirror_config = "toroid"  # moreno or toroid
 
@@ -405,14 +432,14 @@ if __name__ == "__main__":
         beam = run_source_wiggler_shadow4(electron_energy=2.0,
                                           filename ="/home/manuel/Oasys/BM_multi7.b",
                                           use_emittances=True,
-                                          e_min = 0.1,
-                                          e_max = 0.1,
-                                          NRAYS = 1000, )
+                                          e_min = 0.01,
+                                          e_max = 0.01,
+                                          NRAYS = 100000, )
 
-        beam.write("/home/manuel/Oasys/begin.dat")
+        beam.write("/home/manuel/Oasys/begin_ir_0p01_100000.dat")
     else:
         beam = Shadow.Beam()
-        beam.load("/home/manuel/Oasys/begin.dat")
+        beam.load("/home/manuel/Oasys/begin_ir_0p01_100000.dat")
 
 
     if all_magnets == False:
@@ -540,3 +567,6 @@ if __name__ == "__main__":
         r1 = get_R(p_foc, q_foc, 45)
         r2 = get_Rsagittal(p_foc, q_foc, 45)
         print("Radii ar 45 deg: ",r1,r2)
+
+
+    flux_vs_aperture(beam)

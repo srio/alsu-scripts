@@ -165,6 +165,8 @@ def get_magnetic_field_ALS(do_plot=False,filename=""):
     return y,B
 
 
+
+
 if __name__ == "__main__":
     set_qt()
     electron_energy_in_GeV = 2.0
