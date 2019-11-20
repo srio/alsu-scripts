@@ -1,0 +1,23 @@
+{
+    "CLASS_NAME": "LightSource",
+    "name": "ALS-U IR",
+    "electron_beam": {
+        "CLASS_NAME": "ElectronBeam",
+        "energy_in_GeV": 2.0,
+        "energy_spread": 0.00095,
+        "current": 0.5,
+        "number_of_bunches": 400,
+        "moment_xx": 4.9e-11,
+        "moment_xxp": 0.0,
+        "moment_xpxp": 1.0000000000000002e-10,
+        "moment_yy": 1.0000000000000002e-10,
+        "moment_yyp": 0.0,
+        "moment_ypyp": 4.9e-11
+    },
+    "magnetic_structure": {
+        "CLASS_NAME": "BendingMagnet",
+        "radius": 7.668140119497748,
+        "magnetic_field": -0.876,
+        "length": 0.504
+    }
+}
