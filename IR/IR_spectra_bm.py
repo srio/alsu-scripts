@@ -41,7 +41,7 @@ if __name__ == "__main__":
     out = numpy.zeros((npoint,4))
 
     MACHINE_NAME    = ["ALS","ALSU-M7","ALSU-AB","ALSU-M8"]
-    BFIELD          = [1.27,0.87,0.16,0.87]
+    BFIELD          = [1.27,0.876,0.16,0.8495]
     BEAM_ENERGY_GEV = [1.9,2.0,2.0,2.0]
 
 
@@ -50,35 +50,35 @@ if __name__ == "__main__":
     # full emission
     #
 
-    HOR_DIV_MRAD = [69, 2e3 * 0.0328, 2e3 * 0.0036574]  # not used if VER_DIV = 0
-    # HOR_DIV_MRAD    = [1.0]*3
-
-    VER_DIV_MRAD    = [1.0, 1.0, 1.0]
-
-
-    for i in range(3):
-        a6_T, fm, a, energy_ev = xoppy_calc_bm(
-            TYPE_CALC=0,
-            MACHINE_NAME=MACHINE_NAME[i],
-            RB_CHOICE=1,
-            MACHINE_R_M=0.0,
-            BFIELD_T=BFIELD[i],
-            BEAM_ENERGY_GEV=BEAM_ENERGY_GEV[i],
-            CURRENT_A=0.5,
-            HOR_DIV_MRAD=HOR_DIV_MRAD[i],
-            VER_DIV=0, #2, #0,            <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-            PHOT_ENERGY_MIN=0.001,
-            PHOT_ENERGY_MAX=10000.0,
-            NPOINTS=500,
-            LOG_CHOICE=0,
-            PSI_MRAD_PLOT=20.0,
-            PSI_MIN = -VER_DIV_MRAD[i] * 0.5,
-            PSI_MAX =  VER_DIV_MRAD[i] * 0.5,
-            PSI_NPOINTS=500,
-            FILE_DUMP=1)  # writes output to bm.spec
-
-        e0 = a6_T[:, 0].copy()
-        out[:,i] = a6_T[:, 5].copy()
+    # HOR_DIV_MRAD = [69, 2e3 * 0.0328, 2e3 * 0.0036574]  # not used if VER_DIV = 0
+    # # HOR_DIV_MRAD    = [1.0]*3
+    #
+    # VER_DIV_MRAD    = [1.0, 1.0, 1.0]
+    #
+    #
+    # for i in range(3):
+    #     a6_T, fm, a, energy_ev = xoppy_calc_bm(
+    #         TYPE_CALC=0,
+    #         MACHINE_NAME=MACHINE_NAME[i],
+    #         RB_CHOICE=1,
+    #         MACHINE_R_M=0.0,
+    #         BFIELD_T=BFIELD[i],
+    #         BEAM_ENERGY_GEV=BEAM_ENERGY_GEV[i],
+    #         CURRENT_A=0.5,
+    #         HOR_DIV_MRAD=HOR_DIV_MRAD[i],
+    #         VER_DIV=0, #2, #0,            <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    #         PHOT_ENERGY_MIN=0.001,
+    #         PHOT_ENERGY_MAX=10000.0,
+    #         NPOINTS=500,
+    #         LOG_CHOICE=0,
+    #         PSI_MRAD_PLOT=20.0,
+    #         PSI_MIN = -VER_DIV_MRAD[i] * 0.5,
+    #         PSI_MAX =  VER_DIV_MRAD[i] * 0.5,
+    #         PSI_NPOINTS=500,
+    #         FILE_DUMP=1)  # writes output to bm.spec
+    #
+    #     e0 = a6_T[:, 0].copy()
+    #     out[:,i] = a6_T[:, 5].copy()
 
     # print(a6_T.shape)
 
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     #
 
 
-    HOR_DIV_MRAD = [60, 66, 7.5, 29.5]  # not used if VER_DIV = 0
+    HOR_DIV_MRAD = [69, 66, 7.5, 29.5]  # not used if VER_DIV = 0
     VER_DIV_MRAD = [17, 14, 28,  34.0]
 
 
@@ -136,7 +136,7 @@ if __name__ == "__main__":
          e0, out[:, 2],
          e0, out[:, 0],
          e0, out[:, 3],
-         xlog=True, ylog=True, show=True, xrange=[1e-3,1e1], yrange=[1e12,1e15], #yrange=[1e5,1e10], #
-         xtitle="Photon energy [eV]", ytitle="Flux [Photons/s/0.1%bw]", title="Flux (room constrainted emission)",
+         xlog=True, ylog=True, show=True, xrange=[1e-2,1e1], yrange=[1e12,1e15], #yrange=[1e5,1e10], #
+         xtitle="Photon energy [eV]", ytitle="Flux [Photons/s/0.1%bw]", title="Flux (constrainted emission)",
          legend=["ALSU: Mag7+Antibend+Mag8","ALSU: Mag7","ALSU: Antibend","ALS", "ALSU: Mag8"],
          linestyle=["solid","solid","solid","dashed","solid"])
