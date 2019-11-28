@@ -1,36 +1,60 @@
 import numpy
-from srxraylib.plot.gol import plot
+from srxraylib.plot.gol import plot, set_qt
+from scipy.optimize import fsolve
 
+def eq6(u,totd1,bm_radius1):
+    p0 = totd1 * u / (1 + u)
+    return numpy.sqrt(u) * (3 * u - 1) - 3 * p0 / 2 / numpy.abs(bm_radius1) * (1 - u**2) * (1 - u)
 
-def eq6(u):
-    return numpy.sqrt(u) * (3 * u - 1) - 3 * p0 / 2 / numpy.abs(bm_radius) * (1 - u**2) * (1 - u)
+def eq4(u,totd1,bm_radius1):
+    p0 = totd1 * u / (1 + u)
+    return 180 / numpy.pi * numpy.arctan( (1.0 - u**2) * 3 * p0 / 2 / bm_radius1)
 
 
 if __name__ == "__main__":
 
 
-    U = numpy.linspace(0.2,6.0,1000)
+    set_qt()
+
+    for setup in range(4):
+
+        # setup = 0 # 0=Moreno, 1=ALS, 2=ALSU Mag7, 3=ALSU-Mag8
+
+        if setup == 0:
+            # Moreno
+            name="Moreno"
+            totd = 12.0
+            bm_radius = 5.28
+            uvalue_in_use = 1.9
+        elif setup == 1:
+            # ALS
+            name="ALS"
+            totd = 5.87
+            bm_radius = 5.0
+            uvalue_in_use = 0.37
+        elif setup == 2:
+            name="ALSU-Mag7"
+            # ALSU Mag7
+            totd = 5.87
+            bm_radius = 7.6736
+            uvalue_in_use = 0.37
+        elif setup == 3:
+            # ALSU Mag8
+            name="ALSU-Mag8"
+            totd = 5.87
+            bm_radius = 7.858
+            uvalue_in_use = 0.37
 
 
-    # Moreno
-    p0 = 12 * U / (1 + U)
-    bm_radius = 5.28
-    # ALS-U
-    # p0 = 5.87 * U / (1 + U)
-    # bm_radius = 7.6136
 
-    F = eq6(U)
+        tmp = fsolve(eq6, args=(totd,bm_radius), x0=(0.4,2.7) ) #, args=(1.2, 6))
+        print("Solutions for setup %d: u1: %f, u2: %f"%(setup,tmp[0],tmp[1]))
+        print("                        M1: %f, M2: %f" % (1./tmp[0], 1./tmp[1]))
+        print("Angle for u in use (u=%f) %f" % (uvalue_in_use,
+                                                      eq4(uvalue_in_use, totd, bm_radius)))
 
-    F1 = F.copy()
-    F1[(F1.size // 3):-1] = 10000
-    imin = (numpy.abs(F1)).argmin()
-    print("Zero at uvalue: %f, M= %f"%(U[imin],1.0/U[imin]))
+        U = numpy.linspace(0.2,6.0,1000)
+        F = eq6(U,totd,bm_radius)
+        plot(U, F, yrange=[-5, 5],title="setup %s: u1: %f, u2: %f"%(name,tmp[0],tmp[1]))
 
 
-    FF = F.copy()
-    FF[0:FF.size//3] = 1000
-    imin = (numpy.abs(FF)).argmin()
-    print("Zero at uvalue: %f, M= %f" % (U[imin], 1.0 / U[imin]))
-
-
-    plot(U, F, yrange=[-5, 5])

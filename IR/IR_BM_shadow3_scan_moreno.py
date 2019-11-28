@@ -9,7 +9,7 @@ def get_R(p_foc,q_foc,incidence):
     return 2 / (numpy.cos(incidence * numpy.pi / 180)) / mm
 
 
-def run_shadow(incidence=67.7,radius=1.0):
+def run_shadow(incidence=67.7,radius=1.0,invert=True):
     #
     # Python script to run shadow3. Created automatically with ShadowTools.make_python_script_from_list().
     #
@@ -81,7 +81,10 @@ def run_shadow(incidence=67.7,radius=1.0):
     oe1.T_REFLECTION = 45.0
     oe1.T_SOURCE = 6.0
 
-    oe2.ALPHA = 90.0
+    if invert:
+        oe2.ALPHA = 270
+    else:
+        oe2.ALPHA = 90.0
     oe2.DUMMY = 100.0
     oe2.FCYL = 1
     oe2.FHIT_C = 1
@@ -98,7 +101,10 @@ def run_shadow(incidence=67.7,radius=1.0):
     oe2.T_REFLECTION = incidence
     oe2.T_SOURCE = 1.862
 
-    oe3.ALPHA = 270.0
+    if invert:
+        oe3.ALPHA = 90
+    else:
+        oe3.ALPHA = 270.0
     oe3.DUMMY = 100.0
     oe3.FWRITE = 3
     oe3.F_REFRAC = 2
@@ -169,7 +175,11 @@ if __name__ == "__main__":
     from srxraylib.util.h5_simple_writer import H5SimpleWriter
 
     set_qt()
-    Incidence = numpy.linspace(5.0, 70, 101)
+
+    invert = False
+
+
+    Incidence = numpy.linspace(2.0, 88, 11)
     Radius = numpy.zeros_like(Incidence)
     Fwhm = numpy.zeros_like(Incidence)
     Std = numpy.zeros_like(Incidence)
@@ -180,12 +190,15 @@ if __name__ == "__main__":
 
     Grazing = 90.0 - Incidence
 
-    p0 = 6.0+1.862
-    q0 = 12.0 - p0
+    totd1 = 12.0
+    u = 1.9
+    p0 = totd1 * u / (1 + u)
+    q0 = totd1 - p0
+
     for i,incidence in enumerate(Incidence):
         grazing = 90.0 - incidence
         radius = get_R(p0,q0,incidence)
-        beam,oe2 = run_shadow(incidence=incidence,radius=radius)
+        beam,oe2 = run_shadow(incidence=incidence,radius=radius,invert=invert)
         # Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=101, nolost=1, title="Real space")
 
         tkt = beam.histo1(1,nbins=201,nolost=1) # xrange=[-4000e-6,4000e-6],
@@ -217,16 +230,18 @@ if __name__ == "__main__":
     # Shadow.ShadowTools.plotxy(beam,3,6,nbins=101,nolost=1,title="Phase space Z")
     imin = Std.argmin()
     optimizedIncidence = Incidence[imin]     #
-    optimizedRadius    = Radius[imin]        #
+    optimizedRadius    = get_R(p0,q0,optimizedIncidence)
 
 
 
-    beam,oe1 = run_shadow(incidence=optimizedIncidence,radius=optimizedRadius)
+    beam,oe1 = run_shadow(incidence=optimizedIncidence,radius=optimizedRadius,invert=invert)
 
 
     tkt = Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=201, nolost=1, ref=23,
                               # xrange=[-5e-3*5,5e-3*5],
-                              title="theta: %f, R: %f"%(optimizedIncidence,optimizedRadius))
+                              title="theta_normal: %f, R: %f"%(optimizedIncidence,optimizedRadius))
 
     print("best incidence angle: %f deg, grazing %f deg"%(optimizedIncidence,90-optimizedIncidence))
     print("Radius: %f m "%optimizedRadius)
+
+    print("p0:",p0," q0: ",q0,"p0-6.0:",p0-6)

@@ -174,9 +174,10 @@ if __name__ == "__main__":
     Fwhm = numpy.zeros_like(uvalue)
     Std = numpy.zeros_like(uvalue)
 
-    import h5py
+    dump_file = False
 
-    h = H5SimpleWriter.initialize_file("IR_BM_shadow3_scanMagnification_moreno.h5")
+    if dump_file:
+        h = H5SimpleWriter.initialize_file("IR_BM_shadow3_scanMagnification_moreno.h5")
 
     grazing = 80.27
     incidence = 90.0 - grazing
@@ -196,22 +197,25 @@ if __name__ == "__main__":
         Fwhm[i] = 1e6*tkt["fwhm"]
         Std[i] = 1e6 * beam.get_standard_deviation(1,nolost=1)
 
-        h.create_entry("iteration %f" % uvalue[i], nx_default="histogram")
-        h.add_dataset(1e6*tkt["bin_path"],tkt["histogram_path"], dataset_name="histogram",entry_name="iteration %f" % uvalue[i],
-                      title_x="X / um",title_y="intensity / a.u.")
+        if dump_file:
+            h.create_entry("iteration %f" % uvalue[i], nx_default="histogram")
+            h.add_dataset(1e6*tkt["bin_path"],tkt["histogram_path"], dataset_name="histogram",entry_name="iteration %f" % uvalue[i],
+                          title_x="X / um",title_y="intensity / a.u.")
 
 
 
     plot(uvalue,Fwhm,xtitle="uvalue",ytitle="FWHM/um",show=False)
-    plot(uvalue, Fwhm,uvalue, Std,xtitle="uvalue",ytitle="FWHM/um",legend=["fwhm","std"])
+    plot(uvalue, Fwhm,uvalue, Std,xtitle="uvalue",ytitle="FWHM/um",legend=["fwhm","std"],show=False)
+    plot(uvalue, Fwhm*uvalue, uvalue, Std*uvalue, xtitle="uvalue", ytitle="FWHM/um times uvalue", legend=["fwhm", "std"])
 
-    h.create_entry("scan results", nx_default="Fwhm")
-    h.add_dataset(uvalue, Fwhm, dataset_name="Fwhm", entry_name="scan results",
-                  title_x="uvalue", title_y="fwhm / um")
-    h.add_dataset(uvalue, Std, dataset_name="Std", entry_name="scan results",
-                  title_x="uvalue", title_y="std / um")
-    h.add_dataset(Radius, Fwhm, dataset_name="Radius", entry_name="scan results",
-                  title_x="radius / m", title_y="fwhm / um")
+    if dump_file:
+        h.create_entry("scan results", nx_default="Fwhm")
+        h.add_dataset(uvalue, Fwhm, dataset_name="Fwhm", entry_name="scan results",
+                      title_x="uvalue", title_y="fwhm / um")
+        h.add_dataset(uvalue, Std, dataset_name="Std", entry_name="scan results",
+                      title_x="uvalue", title_y="std / um")
+        h.add_dataset(Radius, Fwhm, dataset_name="Radius", entry_name="scan results",
+                      title_x="radius / m", title_y="fwhm / um")
 
     for key in tkt.keys():
         print(key)
