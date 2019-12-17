@@ -6,170 +6,8 @@ from scipy import spatial
 import matplotlib.pylab as plt
 import matplotlib as mpl
 
-# from scipy.spatial import Delaunay
-# from scipy.interpolate import griddata
-
-import h5py
-import numpy
-
-from scipy import interpolate
-from scipy import spatial
-
-import matplotlib.pylab as plt
-import matplotlib as mpl
-
-# from scipy.spatial import Delaunay
-# from scipy.interpolate import griddata
-
-import h5py
-
-
-def load_ansys_file(filename,nx=300,ny=100,xmin=None,xmax=None,ymin=None,ymax=None,
-                    four_quadrants=2,do_plot=False):
-
-
-    a = numpy.loadtxt(filename,skiprows=0)
-
-    node  = numpy.round(a,10)
-
-    # Coordinates
-
-    Xu = node[:,1]  # X=x in m
-    Yu = node[:,2]  # Y=z in m
-    Zu = node[:,3]  # Z=uy vertical displacement in m
-
-
-    X0 = Xu + node[:,4]  # X=x in m
-    Y0 = Yu + node[:,5]  # Y=z in m
-    Z0 = Zu + node[:,6]  # Z=uy vertical displacement in m
-
-    print("X undeformed limits: ", Xu.min(), Xu.max())
-    print("Y undeformed limits: ", Yu.min(), Yu.max())
-    print("Z undeformed limits: ", Zu.min(), Zu.max())
-
-    print("X limits: ", X0.min(), X0.max())
-    print("Y limits: ", Y0.min(), Y0.max())
-    print("Z limits: ", Z0.min(), Z0.max())
-
-    if four_quadrants == 2:
-        X1 = numpy.concatenate( (X0,-X0) )
-        Y1 = numpy.concatenate( (Y0, Y0) )
-        Z1 = numpy.concatenate( (Z0, Z0) )
-
-        X = numpy.concatenate( (X1, X1) )
-        Y = numpy.concatenate( (Y1,-Y1) )
-        Z = numpy.concatenate( (Z1, Z1) )
-    else:
-        X = X0
-        Y = Y0
-        Z = Z0
-
-    #
-    # Interpolation
-    #
-    if xmax is None:
-        xmax = X.max() # numpy.abs(X).max()
-    if ymax is None:
-        ymax = Y.max() # numpy.abs(Y).max()
-    if xmin is None:
-        xmin = X.min()
-    if ymin is None:
-        ymin = Y.min()
-
-    # triangulation
-
-    Pi = numpy.array([X, Y]).transpose()
-    tri = spatial.Delaunay(Pi)
-
-    if do_plot:
-        plt.triplot(X0, Y0 , tri.simplices.copy())
-        plt.plot(X0, Y0, "or", label = "Data")
-        plt.grid()
-        plt.legend()
-        plt.xlabel("x")
-        plt.ylabel("y")
-        plt.show()
-
-
-    if four_quadrants == 2:
-        xlin = numpy.linspace(-xmax,xmax,nx)
-        ylin = numpy.linspace(-ymax,ymax,ny)
-    else:
-        xlin = numpy.linspace(xmin,xmax,nx)
-        ylin = numpy.linspace(ymin,ymax,ny)
-
-    XLIN =  numpy.outer(xlin,numpy.ones_like(ylin))
-    YLIN =  numpy.outer(numpy.ones_like(xlin),ylin)
-
-
-    # interpolation
-    P = numpy.array([XLIN.flatten(), YLIN.flatten() ]).transpose()
-
-    z = interpolate.griddata(Pi, Z, P, method = "cubic").reshape([nx,ny])
-
-    if do_plot:
-        plt.contourf(XLIN, YLIN, z, 50, cmap = mpl.cm.jet)
-        plt.colorbar()
-        plt.contour(XLIN, YLIN, z, 20, colors = "k")
-        #plt.triplot(Xi, Yi , tri.simplices.copy(), color = "k")
-        plt.plot(X0, Y0, "or", label = "Data")
-        plt.legend()
-        plt.grid()
-        plt.show()
-
-
-    if four_quadrants == 1:
-        z1 = numpy.vstack((numpy.flip(z,axis=0),z[1:,:]))
-        z2 = numpy.hstack((numpy.flip(z1,axis=1),z1[:,1:]))
-
-        xlin2 = numpy.concatenate((-xlin[::-1],xlin[1:]))
-        ylin2 = numpy.concatenate((-ylin[::-1],ylin[1:]))
-
-        return z2,xlin2,ylin2
-    else:
-        return z,xlin,ylin
-
-def write_shadow_surface(s,xx,yy,filename='presurface.dat'):
-    """
-      write_shadowSurface: writes a mesh in the SHADOW/presurface format
-      SYNTAX:
-           out = write_shadowSurface(z,x,y,filename=filename)
-      INPUTS:
-           z - 2D array of heights z(x,y)
-           x - 1D array of spatial coordinates along mirror width.
-           y - 1D array of spatial coordinates along mirror length.
-
-      OUTPUTS:
-           filename - output file in SHADOW format. If undefined, the
-                     file is names "presurface.dat"
-
-    """
-
-    try:
-       fs = open(filename, 'w')
-    except IOError:
-       out = 0
-       print ("Error: can\'t open file: "+filename)
-       return
-    else:
-        # dimensions
-        fs.write( "%d  %d \n"%(xx.size,yy.size))
-        # y array
-        for i in range(yy.size):
-            fs.write("%g  "%(yy[i]))
-        fs.write("\n")
-        # for each x element, the x value followed by the corresponding z(y) profile
-        for i in range(xx.size):
-            tmps = ""
-            for j in range(yy.size):
-                tmps += "%g  "%(s[i,j])
-            fs.write("%g    %s \n"%(xx[i],tmps))
-        fs.close()
-        print ("write_shadow_surface: File for SHADOW "+filename+" written to disk.")
-
-
-def write_h5_surface(s,xx,yy,filename='presurface.hdf5'):
-    subgroup_name = "surface_file"
+def write_generic_h5_surface(s, xx, yy, filename='presurface.hdf5',subgroup_name="surface_file"):
+    import h5py
     file = h5py.File(filename, 'w')
     file[subgroup_name + "/X"] = xx
     file[subgroup_name + "/Y"] = yy
@@ -178,21 +16,260 @@ def write_h5_surface(s,xx,yy,filename='presurface.hdf5'):
     print("write_h5_surface: File for OASYS " + filename + " written to disk.")
 
 
+class FEA_File():
+    def __init__(self,filename=""):
+        self.filename = filename
+        self.reset()
+
+    def reset(self):
+        self.Xundeformed = None  # 1D array
+        self.Yundeformed = None  # 1D array
+        self.Zundeformed = None  # 1D array
+
+        self.Xdeformation = None  # 1D array
+        self.Ydeformation = None  # 1D array
+        self.Zdeformation = None  # 1D array
+
+        self.triPi = None
+        self.tri = None
+
+        self.x_interpolated = None  # 1D array
+        self.y_interpolated = None  # 1D array
+        self.Z_INTERPOLATED = None  # 2D array
+
+    @classmethod
+    def process_file(cls, filename_in, n_axis_0=301, n_axis_1=51,
+                     filename_out="", invert_axes_names=False,
+                     detrend=True, reset_height_method=0, do_plot=False):
+
+        o1 = FEA_File(filename=filename_in)
+        o1.load_multicolumn_file()
+
+        o1.triangulate()
+
+        if do_plot:
+            o1.plot_triangulation()
+
+        o1.interpolate(n_axis_0, n_axis_1)
+        if do_plot:
+            o1.plot_interpolated()
+
+        if o1.does_interpolated_have_nan():
+            o1.remove_borders_in_interpolated_data()
+
+        if do_plot:
+            o1.plot_surface_image()
+
+        if detrend:
+            o1.detrend()
+
+        # o1.reset_height_to_minimum()
+
+        if reset_height_method == 0:
+            pass
+        elif reset_height_method == 1:
+            o1.reset_height_to_minimum()
+        elif reset_height_method == 2:
+            o1.reset_height_to_central_value()
+
+        if do_plot:
+            o1.plot_surface_image()
+
+        if filename_out != "":
+            o1.write_h5_surface(filename=filename_out, invert_axes_names=invert_axes_names)
+
+        return o1
+
+    def set_filename(self,filename):
+        self.filename = filename
+
+    def load_multicolumn_file(self,skiprows=0):
+        a = numpy.loadtxt(self.filename,skiprows=skiprows )
+
+        node = numpy.round(a, 10)
+
+        # Coordinates
+
+        self.Xundeformed = node[:, 1]  # X=x in m
+        self.Yundeformed = node[:, 2]  # Y=z in m
+        self.Zundeformed = node[:, 3]  # Z=uy vertical displacement in m
+
+        self.Xdeformation = node[:, 4]  # X=x in m
+        self.Ydeformation = node[:, 5]  # Y=z in m
+        self.Zdeformation = node[:, 6]  # Z=uy vertical displacement in m
+
+    def Xdeformed(self):
+        return self.Xundeformed + self.Xdeformation
+
+    def Ydeformed(self):
+        return self.Yundeformed + self.Ydeformation
+
+    def Zdeformed(self):
+        return self.Zundeformed + self.Zdeformation
+
+
+    def get_deformed(self):
+        return self.Xdeformed(),self.Ydeformed(),self.Zdeformed()
+
+    def get_limits_undeformed(self):
+
+        print("X undeformed limits: ", self.Xundeformed.min(), self.Xundeformed.max())
+        print("Y undeformed limits: ", self.Yundeformed.min(), self.Yundeformed.max())
+        print("Z undeformed limits: ", self.Zundeformed.min(), self.Zundeformed.max())
+
+        return self.Xundeformed.min(), self.Xundeformed.max(), \
+               self.Yundeformed.min(), self.Yundeformed.max(), \
+               self.Zundeformed.min(), self.Zundeformed.max()
+
+    def get_limits_deformation(self):
+
+        print("Xdeformation limits: ", self.Xdeformation.min(), self.Xdeformation.max())
+        print("Ydeformation limits: ", self.Ydeformation.min(), self.Ydeformation.max())
+        print("Zdeformation limits: ", self.Zdeformation.min(), self.Zdeformation.max())
+
+        return self.Xdeformation.min(), self.Xdeformation.max(), \
+               self.Ydeformation.min(), self.Ydeformation.max(), \
+               self.Zdeformation.min(), self.Zdeformation.max()
+
+    def get_limits_deformed(self):
+
+        print("X deformed limits: ", self.Xdeformed().min(), self.Xdeformed().max())
+        print("Y deformed limits: ", self.Ydeformed().min(), self.Ydeformed().max())
+        print("Z deformed limits: ", self.Zdeformed().min(), self.Zdeformed().max())
+
+        return self.Xdeformed().min(), self.Xdeformed().max(), \
+               self.Ydeformed().min(), self.Ydeformed().max(), \
+               self.Zdeformed().min(), self.Zdeformed().max()
+
+    def triangulate(self):
+        # triangulation
+        self.triPi = numpy.array([self.Xdeformed(), self.Ydeformed()]).transpose()
+        self.tri = spatial.Delaunay(self.triPi)
+
+    def plot_triangulation(self):
+        plt.triplot(self.Xdeformed(), self.Ydeformed() , self.tri.simplices.copy())
+        plt.plot(self.Xdeformed(), self.Ydeformed(), "or", label = "Data")
+        plt.grid()
+        plt.legend()
+        plt.title("triangulation")
+        plt.xlabel("x")
+        plt.ylabel("y")
+        plt.show()
+
+    def get_Xinterpolated_mesh(self):
+        return numpy.outer(self.x_interpolated,numpy.ones_like(self.y_interpolated))
+
+    def get_Yinterpolated_mesh(self):
+        return numpy.outer(numpy.ones_like(self.x_interpolated),self.y_interpolated)
+
+
+    def interpolate(self,nx,ny,remove_nan=False):
+        if self.tri is None:
+            self.triangulate()
+
+        lim = self.get_limits_deformed()
+        self.x_interpolated = numpy.linspace(lim[0],lim[1],nx)
+        self.y_interpolated = numpy.linspace(lim[2],lim[3],ny)
+
+        X_INTERPOLATED =  self.get_Xinterpolated_mesh()
+        Y_INTERPOLATED =  self.get_Yinterpolated_mesh()
+
+        self.P = numpy.array([X_INTERPOLATED.flatten(), Y_INTERPOLATED.flatten() ]).transpose()
+
+        if remove_nan:
+            self.Z_INTERPOLATED = interpolate.griddata(self.triPi, self.Zdeformed(), self.P, method = "cubic", fill_value=self.Zdeformed().min() ).reshape([nx,ny])
+        else:
+            self.Z_INTERPOLATED = interpolate.griddata(self.triPi, self.Zdeformed(), self.P, method="cubic").reshape([nx, ny])
+
+
+    def plot_interpolated(self):
+        plt.contourf(self.get_Xinterpolated_mesh(), self.get_Yinterpolated_mesh(), self.Z_INTERPOLATED, 50, cmap = mpl.cm.jet)
+        plt.colorbar()
+        plt.contour(self.get_Xinterpolated_mesh(), self.get_Yinterpolated_mesh(), self.Z_INTERPOLATED, 20, colors = "k")
+        plt.plot(self.Xdeformed(), self.Ydeformed(), "or", label = "Data")
+        plt.legend()
+        # plt.title = "Interpolated"  <---- THIS MAKES ERROR IN THE NEXT PLOT!!!!!!!!!!!!!!!!!
+        plt.grid()
+        plt.show()
+
+
+
+    def plot_surface_image(self,invert_axes_names=True):
+        if invert_axes_names:
+            plot_image(self.Z_INTERPOLATED,self.x_interpolated,self.y_interpolated ,title="file: %s, axes names INVERTED from ANSYS"%self.filename,
+                       xtitle="Y (%d pixels, max:%f)"%(self.x_interpolated.size,self.x_interpolated.max()),
+                       ytitle="X (%d pixels, max:%f)"%(self.y_interpolated.size,self.y_interpolated.max()) )
+        else:
+            plot_image(self.Z_INTERPOLATED,self.x_interpolated,self.y_interpolated,title="file: %s, axes as in ANSYS"%self.filename,
+                       xtitle="X (%d pixels, max:%f)"%(self.x_interpolated.size,self.x_interpolated.max()),
+                       ytitle="Y (%d pixels, max:%f)"%(self.y_interpolated.size,self.y_interpolated.max()) )
+
+
+    def does_interpolated_have_nan(self):
+        return numpy.isnan(self.Z_INTERPOLATED).sum() > 0
+
+    def remove_borders_in_interpolated_data(self):
+        self.x_interpolated = self.x_interpolated[1:-2].copy()
+        self.y_interpolated = self.y_interpolated[1:-2].copy()
+        self.Z_INTERPOLATED = self.Z_INTERPOLATED[1:-2,1:-2].copy()
+
+    def detrend(self,axis=0):
+        if axis == 0:
+            xm = self.x_interpolated.copy()
+            zm = self.Z_INTERPOLATED[:,self.y_interpolated.size//2]
+        elif axis == 1:
+            xm = self.y_interpolated.copy()
+            zm = self.Z_INTERPOLATED[self.x_interpolated.size // 2, :]
+
+        zm.shape = -1
+
+        icut = numpy.argwhere( xm > -xm[-1])
+        xcut = xm[icut]
+        zmcut = zm[icut]
+
+        xcut.shape = -1
+        zmcut.shape = -1
+
+        # print(">>>>>>>>>>>>>>>>>>",xm.shape,zm.shape,xcut.shape,zmcut.shape)
+        # plot(xm,zm,xcut,zmcut,title="sssss")
+
+        print( numpy.argwhere(numpy.isnan(self.Z_INTERPOLATED)) )
+        coeff = numpy.polyfit(xcut, zmcut, deg=2)
+
+        zfit = coeff[1] * xm  + coeff[0]
+
+        if axis ==0:
+            for i in range(self.Z_INTERPOLATED.shape[1]):
+                self.Z_INTERPOLATED[:,i] -= zfit
+        elif axis == 1:
+            for i in range(self.Z_INTERPOLATED.shape[0]):
+                self.Z_INTERPOLATED[i,:] -= zfit
+
+    def reset_height_to_minimum(self):
+        self.Z_INTERPOLATED -= self.Z_INTERPOLATED.min()
+
+    def reset_height_to_central_value(self):
+        self.Z_INTERPOLATED -= self.Z_INTERPOLATED[self.Z_INTERPOLATED.shape[0]//2,self.Z_INTERPOLATED.shape[1]//2]
+
+
+    def write_h5_surface(self,filename='presurface.hdf5',invert_axes_names=False):
+        if invert_axes_names:
+            write_generic_h5_surface(self.Z_INTERPOLATED.T, self.y_interpolated, self.x_interpolated, filename=filename)
+        else:
+            write_generic_h5_surface(self.Z_INTERPOLATED,self.x_interpolated,self.y_interpolated,filename=filename)
+
 
 if __name__ == "__main__":
-    from srxraylib.plot.gol import plot_image, set_qt
+    from srxraylib.plot.gol import plot_image, set_qt, plot
+    import os
 
     set_qt()
 
-    filename = "s4.txt"
-    z,x,y = load_ansys_file(filename,nx=301,ny=51, do_plot=1, four_quadrants=0)
 
-    plot_image(z,x,y,title=filename+" axes as in ANSYS",
-               xtitle="X (%d pixels, max:%f)"%(x.size,x.max()),
-               ytitle="Y (%d pixels, max:%f)"%(y.size,y.max()),)
+    o1 = FEA_File.process_file("s4.txt", n_axis_0=301, n_axis_1=51,
+                 filename_out="/home/manuel/Oasys/s4.h5", invert_axes_names=True,
+                 detrend=True, reset_height_method=1, do_plot=False)
 
-    # write_shadow_surface(z,x,y, filename="s4.dat")
-    # Note the axes inversion:  that for shadow y is along the beam
-    write_h5_surface(z.T,y,x,filename="/Users/srio/Oasys/s4.h5")
-
-
+    o1.plot_triangulation()
+    o1.plot_interpolated()
+    o1.plot_surface_image()
