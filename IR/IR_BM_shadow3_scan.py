@@ -34,8 +34,8 @@ def run_shadow(incidence=67.7,radius=1.0):
     #
 
     oe0.BENER = 2.0
-    oe0.EPSI_X = 70e-12
-    oe0.EPSI_Z = 70e-12
+    oe0.EPSI_X = 7e-11
+    oe0.EPSI_Z = 7e-11
     oe0.FDISTR = 6
     oe0.FSOURCE_DEPTH = 4
     oe0.F_COLOR = 3
@@ -44,10 +44,10 @@ def run_shadow(incidence=67.7,radius=1.0):
     oe0.HDIV2 = 0.033
     oe0.ISTAR1 = 5676561
     oe0.NCOL = 0
-    oe0.NPOINT = 100000
+    oe0.NPOINT = 300000
     oe0.N_COLOR = 0
-    oe0.PH1 = 0.4
-    oe0.PH2 = 0.401
+    oe0.PH1 = 0.1
+    oe0.PH2 = 0.101
     oe0.POL_DEG = 0.0
     oe0.R_ALADDIN = -7.615618611829955
     oe0.R_MAGNET = -7.615618611829955
@@ -55,7 +55,7 @@ def run_shadow(incidence=67.7,radius=1.0):
     oe0.SIGDIZ = 0.0
     oe0.SIGMAX = 7e-06
     oe0.SIGMAY = 0.0
-    oe0.SIGMAZ = 10e-06
+    oe0.SIGMAZ = 1e-05
     oe0.VDIV1 = 0.05
     oe0.VDIV2 = 0.05
     oe0.WXSOU = 0.0
@@ -77,16 +77,20 @@ def run_shadow(incidence=67.7,radius=1.0):
     oe2.ALPHA = 90.0
     oe2.DUMMY = 100.0
     oe2.FCYL = 1
+    oe2.FHIT_C = 1
     oe2.FMIRR = 1
-    oe2.FWRITE = 1
     oe2.F_DEFAULT = 0
-    oe2.SIMAG = 3.11
-    oe2.SSOUR = 2.76
+    oe2.RLEN1 = 6.0
+    oe2.RLEN2 = 6.0
+    oe2.RWIDX1 = 0.65
+    oe2.RWIDX2 = 0.65
+    oe2.SIMAG = 2.697
+    oe2.SSOUR = 3.31
     oe2.THETA = 45.0
-    oe2.T_IMAGE = 3.11
+    oe2.T_IMAGE = 2.697
     oe2.T_INCIDENCE = 45.0
     oe2.T_REFLECTION = 45.0
-    oe2.T_SOURCE = 1.18
+    oe2.T_SOURCE = 1.73
 
     # Run SHADOW to create the source
 
@@ -151,7 +155,7 @@ if __name__ == "__main__":
     
     for i,incidence in enumerate(Incidence):
         grazing = 90.0 - incidence
-        radius = get_R(1.58,4.29,incidence)
+        radius = get_R(1.58,6.007-1.58,incidence)
         beam,oe1 = run_shadow(incidence=incidence,radius=radius)
         # Shadow.ShadowTools.plotxy(beam, 1, 3, nbins=101, nolost=1, title="Real space")
 

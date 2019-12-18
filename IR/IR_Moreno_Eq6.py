@@ -35,15 +35,15 @@ if __name__ == "__main__":
         elif setup == 2:
             name="ALSU-Mag7"
             # ALSU Mag7
-            totd = 5.87
+            totd = 6.007 # 5.87
             bm_radius = 7.6736
-            uvalue_in_use = 0.37
+            uvalue_in_use = 1.58 / (totd - 1.58)
         elif setup == 3:
             # ALSU Mag8
             name="ALSU-Mag8"
-            totd = 5.87
+            totd = 6.007 # 5.87
             bm_radius = 7.858
-            uvalue_in_use = 0.37
+            uvalue_in_use = 1.58 / (totd - 1.58)
         elif setup == 4:
             # Moreno
             name="MorenoOtherSolution"
@@ -53,7 +53,7 @@ if __name__ == "__main__":
         elif setup == 5:
             # ALSU Optimum toroid
             name="ToroidOptimum"
-            totd = 5.87
+            totd = 6.007 # 5.87
             bm_radius = 7.6736
             uvalue_in_use = 3.007984
 

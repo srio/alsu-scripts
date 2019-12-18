@@ -40,10 +40,17 @@ class FEA_File():
     @classmethod
     def process_file(cls, filename_in, n_axis_0=301, n_axis_1=51,
                      filename_out="", invert_axes_names=False,
-                     detrend=True, reset_height_method=0, do_plot=False):
+                     detrend=True, reset_height_method=0,
+                     replicate_raw_data_flag=0, # 0=None, 1=axis0, 2=axis1, 3=both axis
+                     do_plot=False):
 
         o1 = FEA_File(filename=filename_in)
         o1.load_multicolumn_file()
+
+
+        o1.replicate_raw_data(replicate_raw_data_flag)
+
+
 
         o1.triangulate()
 
@@ -141,6 +148,41 @@ class FEA_File():
                self.Ydeformed().min(), self.Ydeformed().max(), \
                self.Zdeformed().min(), self.Zdeformed().max()
 
+
+    def replicate_raw_data(self,flag):
+
+        if flag == 0: # nothing
+            return
+        elif flag == 1: # axis 0
+            self.Xundeformed = numpy.concatenate((-self.Xundeformed, self.Xundeformed))
+            self.Yundeformed = numpy.concatenate((self.Yundeformed, self.Yundeformed))
+            self.Zundeformed = numpy.concatenate((self.Zundeformed, self.Zundeformed))
+            self.Xdeformation = numpy.concatenate((-self.Xdeformation, self.Xdeformation))
+            self.Ydeformation = numpy.concatenate((self.Ydeformation, self.Ydeformation))
+            self.Zdeformation = numpy.concatenate((self.Zdeformation, self.Zdeformation))
+        elif flag == 2: # axis 1
+            self.Xundeformed = numpy.concatenate((self.Xundeformed, self.Xundeformed))
+            self.Yundeformed = numpy.concatenate((-self.Yundeformed, self.Yundeformed))
+            self.Zundeformed = numpy.concatenate((self.Zundeformed, self.Zundeformed))
+            self.Xdeformation = numpy.concatenate((self.Xdeformation, self.Xdeformation))
+            self.Ydeformation = numpy.concatenate((-self.Ydeformation, self.Ydeformation))
+            self.Zdeformation = numpy.concatenate((self.Zdeformation, self.Zdeformation))
+        elif flag == 3: # both axes
+            self.Xundeformed = numpy.concatenate((-self.Xundeformed, self.Xundeformed))
+            self.Yundeformed = numpy.concatenate((self.Yundeformed, self.Yundeformed))
+            self.Zundeformed = numpy.concatenate((self.Zundeformed, self.Zundeformed))
+            self.Xdeformation = numpy.concatenate((-self.Xdeformation, self.Xdeformation))
+            self.Ydeformation = numpy.concatenate((self.Ydeformation, self.Ydeformation))
+            self.Zdeformation = numpy.concatenate((self.Zdeformation, self.Zdeformation))
+
+            self.Xundeformed = numpy.concatenate((self.Xundeformed, self.Xundeformed))
+            self.Yundeformed = numpy.concatenate((-self.Yundeformed, self.Yundeformed))
+            self.Zundeformed = numpy.concatenate((self.Zundeformed, self.Zundeformed))
+            self.Xdeformation = numpy.concatenate((self.Xdeformation, self.Xdeformation))
+            self.Ydeformation = numpy.concatenate((-self.Ydeformation, self.Ydeformation))
+            self.Zdeformation = numpy.concatenate((self.Zdeformation, self.Zdeformation))
+
+
     def triangulate(self):
         # triangulation
         self.triPi = numpy.array([self.Xdeformed(), self.Ydeformed()]).transpose()
@@ -194,7 +236,7 @@ class FEA_File():
 
 
 
-    def plot_surface_image(self,invert_axes_names=True):
+    def plot_surface_image(self,invert_axes_names=False):
         if invert_axes_names:
             plot_image(self.Z_INTERPOLATED,self.x_interpolated,self.y_interpolated ,title="file: %s, axes names INVERTED from ANSYS"%self.filename,
                        xtitle="Y (%d pixels, max:%f)"%(self.x_interpolated.size,self.x_interpolated.max()),
@@ -230,9 +272,6 @@ class FEA_File():
         xcut.shape = -1
         zmcut.shape = -1
 
-        # print(">>>>>>>>>>>>>>>>>>",xm.shape,zm.shape,xcut.shape,zmcut.shape)
-        # plot(xm,zm,xcut,zmcut,title="sssss")
-
         print( numpy.argwhere(numpy.isnan(self.Z_INTERPOLATED)) )
         coeff = numpy.polyfit(xcut, zmcut, deg=2)
 
@@ -266,10 +305,23 @@ if __name__ == "__main__":
     set_qt()
 
 
-    o1 = FEA_File.process_file("s4.txt", n_axis_0=301, n_axis_1=51,
-                 filename_out="/home/manuel/Oasys/s4.h5", invert_axes_names=True,
-                 detrend=True, reset_height_method=1, do_plot=False)
+    # o1 = FEA_File.process_file("s4.txt", n_axis_0=301, n_axis_1=51,
+    #              filename_out="/home/manuel/Oasys/s4.h5", invert_axes_names=True,
+    #              detrend=True, reset_height_method=1, do_plot=False)
 
+
+
+    o1 = FEA_File.process_file("73water_side_cooled_notches_best_LH.txt", n_axis_0=1001, n_axis_1=101,
+                 filename_out="/home/manuel/Oasys/water_side_cooled_notches_best_LH.h5", invert_axes_names=True,
+                 detrend=True, reset_height_method=2,
+                 replicate_raw_data_flag=3,do_plot=False)
+
+    # o1 = FEA_File.process_file("73water_side_cooled_notches_best_LV.txt", n_axis_0=1001, n_axis_1=101,
+    #              filename_out="/home/manuel/Oasys/water_side_cooled_notches_best_LV.h5", invert_axes_names=True,
+    #              detrend=False, reset_height_method=0,
+    #              replicate_raw_data_flag=3,do_plot=False)
+
+    #
     o1.plot_triangulation()
     o1.plot_interpolated()
     o1.plot_surface_image()
