@@ -7,7 +7,7 @@ from srxraylib.plot.gol import plot
 #
 def source(photon_energy=250):
     from wofry.propagator.wavefront1D.generic_wavefront import GenericWavefront1D
-    input_wavefront = GenericWavefront1D.initialize_wavefront_from_range(x_min=-0.00075,x_max=0.00075,number_of_points=1000)
+    input_wavefront = GenericWavefront1D.initialize_wavefront_from_range(x_min=-0.00075*2,x_max=0.00075*2,number_of_points=5000)
     input_wavefront.set_photon_energy(photon_energy)
     input_wavefront.set_spherical_wave(radius=13.73,center=0,complex_amplitude=complex(1, 0))
     return input_wavefront
@@ -299,7 +299,7 @@ if __name__ == "__main__":
     I0uncorr1500 = numpy.zeros_like(ERROR_RADIUS)
     I0corr1500 = numpy.zeros_like(ERROR_RADIUS)
 
-    factor = 1.0 # -1.0
+    factor = -1.0 # -1.0
     for i in range(ERROR_RADIUS.size):
         wf2 = RUN_WOFRY(photon_energy=250, do_plot=False, do_optimize_M3=True, error_radius=factor*ERROR_RADIUS[i])
         I0corr[i] = get_wavefront_intensity_I0(wf2)
