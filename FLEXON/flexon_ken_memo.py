@@ -7,7 +7,7 @@ from srxraylib.plot.gol import plot
 #
 def source(photon_energy=250):
     from wofry.propagator.wavefront1D.generic_wavefront import GenericWavefront1D
-    input_wavefront = GenericWavefront1D.initialize_wavefront_from_range(x_min=-0.00075*2,x_max=0.00075*2,number_of_points=5000)
+    input_wavefront = GenericWavefront1D.initialize_wavefront_from_range(x_min=-0.00147,x_max=0.00147,number_of_points=1000)
     input_wavefront.set_photon_energy(photon_energy)
     input_wavefront.set_spherical_wave(radius=13.73,center=0,complex_amplitude=complex(1, 0))
     return input_wavefront
@@ -80,7 +80,7 @@ def apply_error_on_M1(wf_in,focal_x=100.000000):
                                                    propagation_elements=propagation_elements)
     # self.set_additional_parameters(propagation_parameters)
     #
-    propagation_parameters.set_additional_parameters('magnification_x', 0.050000)
+    propagation_parameters.set_additional_parameters('magnification_x', 0.020000)
     #
     propagator = PropagationManager.Instance()
     try:
@@ -93,7 +93,7 @@ def apply_error_on_M1(wf_in,focal_x=100.000000):
     return output_wavefront
 
 
-def propagate_from_M1_to_M3(wf_in):
+def propagate_from_M1_to_M3(wf_in, magnification_x=2.0):
     #
     # ===== Example of python code to create propagate current element =====
     #
@@ -139,7 +139,7 @@ def propagate_from_M1_to_M3(wf_in):
                                                    propagation_elements=propagation_elements)
     # self.set_additional_parameters(propagation_parameters)
     #
-    propagation_parameters.set_additional_parameters('magnification_x', 2.000000)
+    propagation_parameters.set_additional_parameters('magnification_x', magnification_x)
     #
     propagator = PropagationManager.Instance()
     try:
@@ -150,7 +150,7 @@ def propagate_from_M1_to_M3(wf_in):
                                                  handler_name='FRESNEL_ZOOM_1D')
     return output_wavefront
 
-def apply_M3_focusing_and_propagete_to_sample(wf_in,focal_x=2.407000):
+def apply_M3_focusing(wf_in,focal_x=2.407000):
     #
     # ===== Example of python code to create propagate current element =====
     #
@@ -158,11 +158,11 @@ def apply_M3_focusing_and_propagete_to_sample(wf_in,focal_x=2.407000):
     #
     # Import section
     #
+    import numpy
     from wofry.propagator.propagator import PropagationManager, PropagationElements, PropagationParameters
     from syned.beamline.beamline_element import BeamlineElement
     from syned.beamline.element_coordinates import ElementCoordinates
     from wofry.propagator.propagators1D.fresnel_zoom import FresnelZoom1D
-
 
     input_wavefront = wf_in.duplicate()
 
@@ -188,6 +188,62 @@ def apply_M3_focusing_and_propagete_to_sample(wf_in,focal_x=2.407000):
     #
     propagation_elements = PropagationElements()
     beamline_element = BeamlineElement(optical_element=optical_element,
+                                       coordinates=ElementCoordinates(p=0.000000, q=0.000000,
+                                                                      angle_radial=numpy.radians(0.000000),
+                                                                      angle_azimuthal=numpy.radians(0.000000)))
+    propagation_elements.add_beamline_element(beamline_element)
+    propagation_parameters = PropagationParameters(wavefront=input_wavefront.duplicate(),
+                                                   propagation_elements=propagation_elements)
+    # self.set_additional_parameters(propagation_parameters)
+    #
+    propagation_parameters.set_additional_parameters('magnification_x', 1.000000)
+    #
+    propagator = PropagationManager.Instance()
+    try:
+        propagator.add_propagator(FresnelZoom1D())
+    except:
+        pass
+    output_wavefront = propagator.do_propagation(propagation_parameters=propagation_parameters,
+                                                 handler_name='FRESNEL_ZOOM_1D')
+    return output_wavefront
+
+def propagate_from_M3_to_sample(wf_in, magnification_x=0.02):
+    #
+    # ===== Example of python code to create propagate current element =====
+    #
+
+    #
+    # Import section
+    #
+    import numpy
+    from wofry.propagator.propagator import PropagationManager, PropagationElements, PropagationParameters
+    from syned.beamline.beamline_element import BeamlineElement
+    from syned.beamline.element_coordinates import ElementCoordinates
+    from wofry.propagator.propagators1D.fresnel_zoom import FresnelZoom1D
+
+    input_wavefront = wf_in.duplicate()
+
+    #
+    # info on current oe
+    #
+    #
+    #    -------WOScreen1D---------
+    #        -------BoundaryShape---------
+    #
+
+    #
+    # define current oe
+    #
+    from wofry.beamline.optical_elements.ideal_elements.screen import WOScreen1D
+
+    optical_element = WOScreen1D()
+
+    #
+    # propagating (***  ONLY THE ZOOM PROPAGATOR IS IMPLEMENTED ***)
+    #
+    #
+    propagation_elements = PropagationElements()
+    beamline_element = BeamlineElement(optical_element=optical_element,
                                        coordinates=ElementCoordinates(p=0.000000, q=2.640000,
                                                                       angle_radial=numpy.radians(0.000000),
                                                                       angle_azimuthal=numpy.radians(0.000000)))
@@ -196,7 +252,7 @@ def apply_M3_focusing_and_propagete_to_sample(wf_in,focal_x=2.407000):
                                                    propagation_elements=propagation_elements)
     # self.set_additional_parameters(propagation_parameters)
     #
-    propagation_parameters.set_additional_parameters('magnification_x', 0.050000)
+    propagation_parameters.set_additional_parameters('magnification_x',magnification_x)
     #
     propagator = PropagationManager.Instance()
     try:
@@ -240,7 +296,8 @@ def RUN_WOFRY(photon_energy=250,do_plot=True,do_optimize_M3=False,error_radius=1
 
 
     focal_x_error = 0.5 * error_radius * numpy.sin(1.25 * numpy.pi / 180)
-    wf0 = apply_error_on_M1(wf, focal_x=focal_x_error)
+    # wf0 = apply_error_on_M1(wf, focal_x=focal_x_error)
+    wf0 = apply_Mirror(wf, error_radius)  # <=======================================================
 
     wf1 = propagate_from_M1_to_M3(wf0)
     # plot(wf1.get_abscissas(), wf1.get_intensity())
@@ -253,20 +310,23 @@ def RUN_WOFRY(photon_energy=250,do_plot=True,do_optimize_M3=False,error_radius=1
     if do_optimize_M3:
         DELTA_FOCAL_X = numpy.linspace(-0.4,0.4,200)
         FWHM = numpy.zeros_like(DELTA_FOCAL_X)
+        II = numpy.zeros_like(DELTA_FOCAL_X)
         # I0 = numpy.zeros_like(DELTA_FOCAL_X)
 
         for i in range(DELTA_FOCAL_X.size):
-            wf2 = apply_M3_focusing_and_propagete_to_sample(wf1,focal_x=focal_x+DELTA_FOCAL_X[i])
+            # wf2 = apply_M3_focusing(wf1,focal_x=focal_x+DELTA_FOCAL_X[i])
+            wf2 = apply_Mirror(wf1,focal_x=focal_x+DELTA_FOCAL_X[i])  # <=======================================================
+            wf2 = propagate_from_M3_to_sample(wf2)
             # plot_wavefront_intensity(wf2)
             FWHM[i] = get_wavefront_intensity_fwhm(wf2)
-            # I0[i] = get_wavefront_intensity_I0(wf2)
+            II[i] = get_wavefront_intensity_I0(wf2)
             # print("FWHM is: ",FWHM[i])
 
         if do_plot:
             plot(DELTA_FOCAL_X, FWHM, ytitle="FWHM", xtitle="Delta focal distance [m]")
-            plot(DELTA_FOCAL_X, I0, ytitle="I0", xtitle="Delta focal distance [m]")
+            plot(DELTA_FOCAL_X, II, ytitle="I0", xtitle="Delta focal distance [m]")
 
-        i_opt = FWHM.argmin()
+        i_opt = II.argmax() # FWHM.argmin()
         print("Start FWHM [um]: %f, optimized: %f : "%(focal_x,focal_x+FWHM[i_opt]))
         # print("Radius [start]: %f",get_R_incidence_deg(13.73+13.599,2.64,90-1.25))
         print("Radius initial: %f optimized: %f "%
@@ -274,9 +334,13 @@ def RUN_WOFRY(photon_energy=250,do_plot=True,do_optimize_M3=False,error_radius=1
               get_R_incidence_deg(1./(1/(focal_x+FWHM[i_opt])-1./2.64), 2.64, 90 - 1.25)))
 
         # calculate optimized
-        wf2 = apply_M3_focusing_and_propagete_to_sample(wf1,focal_x=focal_x+DELTA_FOCAL_X[i_opt])
+        # wf2 = apply_M3_focusing(wf1,focal_x=focal_x+DELTA_FOCAL_X[i_opt])
+        wf2 = apply_Mirror(wf1, focal_x=focal_x+DELTA_FOCAL_X[i_opt])  # <=======================================================
+        wf2 = propagate_from_M3_to_sample(wf2)
     else:
-        wf2 = apply_M3_focusing_and_propagete_to_sample(wf1, focal_x=focal_x)
+        # wf2 = apply_M3_focusing(wf1, focal_x=focal_x)
+        wf2 = apply_Mirror(wf1, focal_x=focal_x) # <=======================================================
+        wf2 = propagate_from_M3_to_sample(wf2)
 
     if do_plot:
         plot_wavefront_intensity(wf2)
@@ -285,35 +349,82 @@ def RUN_WOFRY(photon_energy=250,do_plot=True,do_optimize_M3=False,error_radius=1
 
     return wf2
 
+
+
+
+
+
+
+def apply_Mirror(wf_in, radius=None, focal_x=1000.0, theta_grazing=1.25*numpy.pi/180.0, do_plot=False):
+
+    output_wavefront = wf_in.duplicate()
+
+    if radius is None:
+        radius = 2 * focal_x / numpy.sin(theta_grazing)
+
+    abscissas = output_wavefront.get_abscissas()
+
+    abscissas_on_mirror = abscissas / numpy.sin(theta_grazing)
+
+    if radius >= 0:
+        height = radius - numpy.sqrt( radius**2 - abscissas_on_mirror**2)
+    else:
+        height = radius + numpy.sqrt(radius ** 2 - abscissas_on_mirror ** 2)
+
+    phi = -2 * output_wavefront.get_wavenumber()  * height * numpy.sin(theta_grazing)
+
+
+    if do_plot:
+        plot(abscissas_on_mirror, height, title="R = %f"%radius)
+
+    output_wavefront.add_phase_shifts(phi)
+
+
+    return output_wavefront
+
+
+
+
+
+
+
+
+
+
 if __name__ == "__main__":
-    # wf2 = RUN_WOFRY(photon_energy=250,do_plot=False,do_optimize_M3=False,error_radius=1e6)
-    # plot_wavefront_intensity(wf2)
 
-    # wf2 = RUN_WOFRY(photon_energy=250,do_plot=False,do_optimize_M3=True,error_radius=1e2)
-    # plot_wavefront_intensity(wf2)
+    do_loop = True
 
 
-    ERROR_RADIUS = numpy.logspace(1,6,100)
-    I0uncorr = numpy.zeros_like(ERROR_RADIUS)
-    I0corr = numpy.zeros_like(ERROR_RADIUS)
-    I0uncorr1500 = numpy.zeros_like(ERROR_RADIUS)
-    I0corr1500 = numpy.zeros_like(ERROR_RADIUS)
+    if do_loop:
 
-    factor = -1.0 # -1.0
-    for i in range(ERROR_RADIUS.size):
-        wf2 = RUN_WOFRY(photon_energy=250, do_plot=False, do_optimize_M3=True, error_radius=factor*ERROR_RADIUS[i])
-        I0corr[i] = get_wavefront_intensity_I0(wf2)
-        wf2 = RUN_WOFRY(photon_energy=250, do_plot=False, do_optimize_M3=False, error_radius=factor*ERROR_RADIUS[i])
-        I0uncorr[i] = get_wavefront_intensity_I0(wf2)
-        wf2 = RUN_WOFRY(photon_energy=1500, do_plot=False, do_optimize_M3=True, error_radius=factor*ERROR_RADIUS[i])
-        I0corr1500[i] = get_wavefront_intensity_I0(wf2)
-        wf2 = RUN_WOFRY(photon_energy=1500, do_plot=False, do_optimize_M3=False, error_radius=factor*ERROR_RADIUS[i])
-        I0uncorr1500[i] = get_wavefront_intensity_I0(wf2)
+        ERROR_RADIUS = numpy.logspace(1,6,100)
+        I0uncorr = numpy.zeros_like(ERROR_RADIUS)
+        I0corr = numpy.zeros_like(ERROR_RADIUS)
+        I0uncorr1500 = numpy.zeros_like(ERROR_RADIUS)
+        I0corr1500 = numpy.zeros_like(ERROR_RADIUS)
 
-    plot(ERROR_RADIUS,I0uncorr/I0uncorr[-1],
-         ERROR_RADIUS,I0corr/I0corr[-1],
-         ERROR_RADIUS, I0uncorr1500 / I0uncorr1500[-1],
-         ERROR_RADIUS, I0corr1500 / I0corr1500[-1],
-         xlog=True,
-         legend=["Uncorrected E=250eV","Corrected E=250 eV","Uncorrected E=1500eV","Corrected E=1500 eV"],
-         xtitle="Radius [m]",ytitle="Strehl I/I0")
+        factor = -1.0 # -1.0
+        for i in range(ERROR_RADIUS.size):
+            wf2 = RUN_WOFRY(photon_energy=250, do_plot=False, do_optimize_M3=True, error_radius=factor*ERROR_RADIUS[i])
+            I0corr[i] = get_wavefront_intensity_I0(wf2)
+            wf2 = RUN_WOFRY(photon_energy=250, do_plot=False, do_optimize_M3=False, error_radius=factor*ERROR_RADIUS[i])
+            I0uncorr[i] = get_wavefront_intensity_I0(wf2)
+            wf2 = RUN_WOFRY(photon_energy=1500, do_plot=False, do_optimize_M3=True, error_radius=factor*ERROR_RADIUS[i])
+            I0corr1500[i] = get_wavefront_intensity_I0(wf2)
+            wf2 = RUN_WOFRY(photon_energy=1500, do_plot=False, do_optimize_M3=False, error_radius=factor*ERROR_RADIUS[i])
+            I0uncorr1500[i] = get_wavefront_intensity_I0(wf2)
+
+        plot(ERROR_RADIUS,I0uncorr/I0uncorr[-1],
+             ERROR_RADIUS,I0corr/I0corr[-1],
+             ERROR_RADIUS, I0uncorr1500 / I0uncorr1500[-1],
+             ERROR_RADIUS, I0corr1500 / I0corr1500[-1],
+             xlog=True,
+             legend=["Uncorrected E=250eV","Corrected E=250 eV","Uncorrected E=1500eV","Corrected E=1500 eV"],
+             xtitle="Radius [m]",ytitle="Strehl I/I0")
+    else:
+        wf2 = RUN_WOFRY(photon_energy=250, do_plot=False, do_optimize_M3=False, error_radius=-1e4)
+        plot_wavefront_intensity(wf2)
+
+        # wf2 = RUN_WOFRY(photon_energy=250,do_plot=False,do_optimize_M3=True,error_radius=1e2)
+        # plot_wavefront_intensity(wf2)
