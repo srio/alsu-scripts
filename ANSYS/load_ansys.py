@@ -42,10 +42,11 @@ class FEA_File():
                      filename_out="", invert_axes_names=False,
                      detrend=True, reset_height_method=0,
                      replicate_raw_data_flag=0, # 0=None, 1=axis0, 2=axis1, 3=both axis
+                     file_type=0,
                      do_plot=False):
 
         o1 = FEA_File(filename=filename_in)
-        o1.load_multicolumn_file()
+        o1.load_multicolumn_file(file_type=file_type)
 
 
         o1.replicate_raw_data(replicate_raw_data_flag)
@@ -90,20 +91,36 @@ class FEA_File():
     def set_filename(self,filename):
         self.filename = filename
 
-    def load_multicolumn_file(self,skiprows=0):
+    def load_multicolumn_file(self,skiprows=0,file_type=1):
         a = numpy.loadtxt(self.filename,skiprows=skiprows )
-
         node = numpy.round(a, 10)
 
-        # Coordinates
+        if file_type == 0:
 
-        self.Xundeformed = node[:, 1]  # X=x in m
-        self.Yundeformed = node[:, 2]  # Y=z in m
-        self.Zundeformed = node[:, 3]  # Z=uy vertical displacement in m
 
-        self.Xdeformation = node[:, 4]  # X=x in m
-        self.Ydeformation = node[:, 5]  # Y=z in m
-        self.Zdeformation = node[:, 6]  # Z=uy vertical displacement in m
+            # Coordinates
+
+            self.Xundeformed = node[:, 1]  # X=x in m
+            self.Yundeformed = node[:, 2]  # Y=z in m
+            self.Zundeformed = node[:, 3]  # Z=uy vertical displacement in m
+
+            self.Xdeformation = node[:, 4]  # X=x in m
+            self.Ydeformation = node[:, 5]  # Y=z in m
+            self.Zdeformation = node[:, 6]  # Z=uy vertical displacement in m
+        elif file_type == 1:
+            # Coordinates
+            # import random
+            # indices = numpy.arange(node.shape[0])
+            # random.shuffle(indices)
+
+            self.Xundeformed = node[:, 0]  # X=x in m
+            self.Yundeformed = node[:, 1]  # Y=z in m
+            self.Zundeformed = node[:, 2] * 0 # Z=uy vertical displacement in m
+
+            self.Xdeformation = node[:, 0]  # X=x in m
+            self.Ydeformation = node[:, 1]  # Y=z in m
+            self.Zdeformation = node[:, 2]  # Z=uy vertical displacement in m
+
 
     def Xdeformed(self):
         return self.Xundeformed + self.Xdeformation
@@ -236,15 +253,41 @@ class FEA_File():
 
 
 
-    def plot_surface_image(self,invert_axes_names=False):
+    def plot_surface_image(self,invert_axes_names=False,aspect='auto'):
         if invert_axes_names:
             plot_image(self.Z_INTERPOLATED,self.x_interpolated,self.y_interpolated ,title="file: %s, axes names INVERTED from ANSYS"%self.filename,
                        xtitle="Y (%d pixels, max:%f)"%(self.x_interpolated.size,self.x_interpolated.max()),
-                       ytitle="X (%d pixels, max:%f)"%(self.y_interpolated.size,self.y_interpolated.max()) )
+                       ytitle="X (%d pixels, max:%f)"%(self.y_interpolated.size,self.y_interpolated.max()),
+                       aspect=aspect)
         else:
             plot_image(self.Z_INTERPOLATED,self.x_interpolated,self.y_interpolated,title="file: %s, axes as in ANSYS"%self.filename,
                        xtitle="X (%d pixels, max:%f)"%(self.x_interpolated.size,self.x_interpolated.max()),
-                       ytitle="Y (%d pixels, max:%f)"%(self.y_interpolated.size,self.y_interpolated.max()) )
+                       ytitle="Y (%d pixels, max:%f)"%(self.y_interpolated.size,self.y_interpolated.max()),
+                       aspect=aspect)
+
+    def plot_scatter_image(self):
+        import matplotlib.pylab as plt
+        from mpl_toolkits.mplot3d import Axes3D
+
+        x0, y0 = self.x_interpolated, self.y_interpolated
+        xs = numpy.outer(x0,numpy.ones_like(y0)).flatten()
+        ys = numpy.outer(numpy.ones_like(x0),y0).flatten()
+        zs = self.Z_INTERPOLATED.flatten()
+
+        fig = plt.figure()
+        self_axis = fig.add_subplot(111, projection='3d')
+
+        # For each set of style and range settings, plot n random points in the box
+        # defined by x in [23, 32], y in [0, 100], z in [zlow, zhigh].
+        # for m, zlow, zhigh in [('o', -50, -25), ('^', -30, -5)]:
+        for m, zlow, zhigh in [('o', zs.min(), zs.max())]:
+            self_axis.scatter(xs, ys, zs, marker=m)
+
+        self_axis.set_xlabel('X [mm]')
+        self_axis.set_ylabel('Y [mm]')
+        self_axis.set_zlabel('Z [um]')
+        self_axis.set_title("title")
+        plt.show()
 
 
     def does_interpolated_have_nan(self):
@@ -311,17 +354,25 @@ if __name__ == "__main__":
 
 
 
-    o1 = FEA_File.process_file("73water_side_cooled_notches_best_LH.txt", n_axis_0=1001, n_axis_1=101,
-                 filename_out="/home/manuel/Oasys/water_side_cooled_notches_best_LH.h5", invert_axes_names=True,
-                 detrend=True, reset_height_method=2,
-                 replicate_raw_data_flag=3,do_plot=False)
+    # o1 = FEA_File.process_file("73water_side_cooled_notches_best_LH.txt", n_axis_0=1001, n_axis_1=101,
+    #              filename_out="/home/manuel/Oasys/water_side_cooled_notches_best_LH.h5", invert_axes_names=True,
+    #              detrend=True, reset_height_method=2,
+    #              replicate_raw_data_flag=3,do_plot=False)
 
     # o1 = FEA_File.process_file("73water_side_cooled_notches_best_LV.txt", n_axis_0=1001, n_axis_1=101,
     #              filename_out="/home/manuel/Oasys/water_side_cooled_notches_best_LV.h5", invert_axes_names=True,
     #              detrend=False, reset_height_method=0,
     #              replicate_raw_data_flag=3,do_plot=False)
 
+
+    o1 = FEA_File.process_file("/home/manuel/OASYS1.2/OASYS1-ALS-ShadowOui/orangecontrib/xoppy/als/widgets/srcalc/tmp0.dat", n_axis_0=100, n_axis_1=100,
+                 filename_out="/tmp/1", invert_axes_names=False,
+                 detrend=False, reset_height_method=0,
+                 replicate_raw_data_flag=0,file_type=1,do_plot=True)
+
+
+    o1.plot_scatter_image()
     #
-    o1.plot_triangulation()
-    o1.plot_interpolated()
-    o1.plot_surface_image()
+    # o1.plot_triangulation()
+    # o1.plot_interpolated()
+    # o1.plot_surface_image()

@@ -9,10 +9,10 @@ if who == "Sean":
     S  = Vector.initializeFromComponents([0,0,0])
     M1 = Vector.initializeFromComponents([0,1.3,0])
     M2 = Vector.initializeFromComponents([0,1.3,0.28])
-    M3 = Vector.initializeFromComponents([-0.288675,1.3,0.78])
-    M4 = Vector.initializeFromComponents([0.841325,1.3,0.78])
-    M5 = Vector.initializeFromComponents([0.841325,0.275,0.78])
-    DW = Vector.initializeFromComponents([2.366639,-0.302286,0.78])
+    M3 = Vector.initializeFromComponents([-0.293348	,1.3,0.78])
+    M4 = Vector.initializeFromComponents([0.896652	,1.3,0.78])
+    M5 = Vector.initializeFromComponents([0.896652	,0.29,0.78])
+    DW = Vector.initializeFromComponents([2.45789,-0.302286	,0.78])
 else:
     # Manuel
     S  = Vector.initializeFromComponents([0,0,0])

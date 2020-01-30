@@ -393,7 +393,7 @@ def apply_Mirror(wf_in, radius=None, focal_x=1000.0, theta_grazing=1.25*numpy.pi
 
 if __name__ == "__main__":
 
-    do_loop = True
+    do_loop = False
 
 
     if do_loop:
@@ -425,6 +425,8 @@ if __name__ == "__main__":
     else:
         wf2 = RUN_WOFRY(photon_energy=250, do_plot=False, do_optimize_M3=False, error_radius=-1e4)
         plot_wavefront_intensity(wf2)
+
+        print("M3 Radius, angle: ",get_R_grazing(13.73+13.599,2.64,1.25*numpy.pi/180),1.25*numpy.pi/180)
 
         # wf2 = RUN_WOFRY(photon_energy=250,do_plot=False,do_optimize_M3=True,error_radius=1e2)
         # plot_wavefront_intensity(wf2)
