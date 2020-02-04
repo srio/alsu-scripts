@@ -1,12 +1,6 @@
 import numpy
 
 
-def get_R_incidence_deg(p_foc,q_foc,incidence_deg):
-    mm = (1.0 / p_foc + 1.0 / q_foc)
-    return 2 / (numpy.cos(incidence_deg * numpy.pi / 180)) / mm
-
-
-
 def calculate_wavefront1D(wavelength=1e-10,
                           undulator_length=1.0, undulator_distance=10.0,
                           x_min=-0.1, x_max=0.1, number_of_points=101,
@@ -69,21 +63,93 @@ def calculate_output_wavefront_after_reflector1D(input_wavefront, radius=10000.0
 
     return output_wavefront, abscissas_on_mirror, height
 
+def calculate_output_wavefront_after_corrector1D(input_wavefront, grazing_angle=1.5e-3, focus_at=10.0,
+                                                 apodization=0, apodization_ratio=0.1, write_correction_profile=0):
+    import numpy
+    from scipy import interpolate
+    output_wavefront = input_wavefront.duplicate()
+    target_wavefront = input_wavefront.duplicate()
+    target_wavefront.set_spherical_wave(radius=-focus_at, center=0.0, complex_amplitude=1.0)
 
-def propagate_to_M3(input_wavefront):
+    phase_input = input_wavefront.get_phase(unwrap=True)
+    phase_target = target_wavefront.get_phase(unwrap=True)
+    phase_correction = phase_target - phase_input
+    abscissas = target_wavefront.get_abscissas()
+    abscissas_on_mirror = abscissas / numpy.sin(grazing_angle)
+
+    # output_wavefront.add_phase_shift(phase_correction)
+    height = - phase_correction / (2 * output_wavefront.get_wavenumber() * numpy.sin(grazing_angle))
+
+    if apodization == 0:
+        height -= height[height.size // 2]
+    elif apodization == 1:
+        apodization = input_wavefront.get_intensity()
+        apodization = (apodization / apodization.max())
+        height *= apodization
+        height -= height[0]
+    elif apodization == 2:
+        sigma = numpy.abs(abscissas[-1] - abscissas[0]) * apodization_ratio
+        apodization = numpy.exp(- abscissas ** 2 / 2 / sigma ** 2)
+        apodization /= apodization.max()
+        height *= apodization
+        height -= height[0]
+
+    # calculate phase shift from new profile
+    phi = -2 * output_wavefront.get_wavenumber() * height * numpy.sin(grazing_angle)
+    output_wavefront.add_phase_shift(phi)
+
+    # output files
+    if write_correction_profile:
+        f = open("correction_profile1D.dat", "w")
+        for i in range(height.size):
+            f.write("%g %g\n" % (abscissas_on_mirror[i], height[i]))
+        f.close()
+        print("File correction_profile1D.dat written to disk.")
+
+    return output_wavefront, target_wavefront, abscissas_on_mirror, height
+
+
+
+def run_whole_beamline(error_file_M1="/home/manuel/Oasys/dabam_profile_140327232022424.dat",
+                       correction_file_M3="/home/manuel/Oasys/dabam_profile_140522663056440.dat"):
     #
-    # ===== Example of python code to create propagate current element =====
+    # source
+    #
+    output_wavefront = calculate_wavefront1D(wavelength=4.9593679373280105e-09,
+                                             wavefront_position=1,
+                                             undulator_length=3.98,
+                                             undulator_distance=13.73,
+                                             x_min=-0.00147,
+                                             x_max=0.00147,
+                                             number_of_points=3000,
+                                             add_random_phase=False)
+
+
+
+
+
+    #
+    # M1
+    #
+    input_wavefront = output_wavefront
+    output_wavefront, abscissas_on_mirror, height = calculate_output_wavefront_after_reflector1D(input_wavefront,radius=496600.0,grazing_angle=0.0218,error_flag=1,error_file=error_file_M1,write_profile=1)
+
+
+
+    #
+    # screen at M3 position
     #
 
     #
     # Import section
     #
-    import numpy
     from wofry.propagator.propagator import PropagationManager, PropagationElements, PropagationParameters
     from syned.beamline.beamline_element import BeamlineElement
     from syned.beamline.element_coordinates import ElementCoordinates
     from wofry.propagator.propagators1D.fresnel_zoom import FresnelZoom1D
 
+
+    input_wavefront = output_wavefront
 
     #
     # info on current oe
@@ -124,63 +190,63 @@ def propagate_to_M3(input_wavefront):
     output_wavefront = propagator.do_propagation(propagation_parameters=propagation_parameters,
                                                  handler_name='FRESNEL_ZOOM_1D')
 
-    return output_wavefront
 
-
-def calculate_output_wavefront_after_reflector1D_M3(input_wavefront, radius=10000.0, grazing_angle=1.5e-3,
-                                                 error_flag=0, error_file="", write_profile=0):
-    import numpy
-    from scipy import interpolate
-    output_wavefront = input_wavefront.duplicate()
-    abscissas = output_wavefront.get_abscissas()
-    abscissas_on_mirror = abscissas / numpy.sin(grazing_angle)
-    if radius >= 0:
-        height = radius - numpy.sqrt(radius ** 2 - abscissas_on_mirror ** 2)
-    else:
-        height = radius + numpy.sqrt(radius ** 2 - abscissas_on_mirror ** 2)
-
-    if error_flag:
-        a = numpy.loadtxt(error_file)
-        finterpolate = interpolate.interp1d(a[:, 0], a[:, 1], fill_value="extrapolate")
-        height_interpolated = finterpolate(abscissas_on_mirror)
-        height += height_interpolated
-
-    phi = -2 * output_wavefront.get_wavenumber() * height * numpy.sin(grazing_angle)
-    output_wavefront.add_phase_shifts(phi)
-
-    # output files
-    if write_profile:
-        f = open("reflector_profile1D.dat", "w")
-        for i in range(height.size):
-            f.write("%g %g\n" % (abscissas_on_mirror[i], height[i]))
-        f.close()
-        print("File reflector_profile1D.dat written to disk.")
-
-    return output_wavefront, abscissas_on_mirror, height
-
-
-def propagate_to_image(input_wavefront):
-    #
-    # ===== Example of python code to create propagate current element =====
-    #
-
-    #
-    # Import section
-    #
-    import numpy
-    from wofry.propagator.propagator import PropagationManager, PropagationElements, PropagationParameters
-    from syned.beamline.beamline_element import BeamlineElement
-    from syned.beamline.element_coordinates import ElementCoordinates
-    from wofry.propagator.propagators1D.fresnel_zoom import FresnelZoom1D
 
 
     #
-    # info on current oe
+    # M3 circlular mirror
+    #
+
+
+
+    input_wavefront = output_wavefront
+    output_wavefront, abscissas_on_mirror, height = calculate_output_wavefront_after_reflector1D(input_wavefront,
+                                                                                                 radius=220.71532,
+                                                                                                 grazing_angle=0.02181,
+                                                                                                 error_flag=0,
+                                                                                                 error_file="",
+                                                                                                 write_profile=0)
+
+    # #
+    # # M3 corrector (not needed)
+    # #
+    #
+    # input_wavefront = output_wavefront
     #
     #
-    #    -------WOScreen1D---------
-    #        -------BoundaryShape---------
+    # output_wavefront, target_wavefront, abscissas_on_mirror, height = calculate_output_wavefront_after_corrector1D(
+    #     input_wavefront, grazing_angle=0.02181, focus_at=2.64, apodization=0, apodization_ratio=6.0,
+    #     write_correction_profile=1)
     #
+    #
+    # from srxraylib.plot.gol import plot
+    # plot(output_wavefront.get_abscissas(),output_wavefront.get_intensity())
+
+
+    #
+    # M3 corrector from external file
+    #
+
+
+
+
+
+    input_wavefront = output_wavefront
+    output_wavefront, abscissas_on_mirror, height = calculate_output_wavefront_after_reflector1D(input_wavefront,
+                                                                                                 radius=100000000.0,
+                                                                                                 grazing_angle=0.02181,
+                                                                                                 error_flag=1,
+                                                                                                 error_file=correction_file_M3,
+                                                                                                 write_profile=0)
+
+    #
+    # propagation to sample
+    #
+
+
+
+    input_wavefront = output_wavefront
+
 
     #
     # define current oe
@@ -214,60 +280,24 @@ def propagate_to_image(input_wavefront):
                                                  handler_name='FRESNEL_ZOOM_1D')
 
     return output_wavefront
-
-
-
-
 if __name__ == "__main__":
+
+
+
 
     from srxraylib.plot.gol import plot
 
+    output_wavefront = run_whole_beamline(error_file_M1="/home/manuel/Oasys/deformation.dat",
+                       correction_file_M3="/home/manuel/Oasys/correction.dat")
+
+    plot(output_wavefront.get_abscissas(), output_wavefront.get_intensity())
 
     #
-    # source
-    #
-
-    output_wavefront = calculate_wavefront1D(wavelength=4.9593679373280105e-09,
-                                             wavefront_position=1,
-                                             undulator_length=3.98,
-                                             undulator_distance=13.73,
-                                             x_min=-0.00147,
-                                             x_max=0.00147,
-                                             number_of_points=3000,
-                                             add_random_phase=False)
-
-
-
-
-    #
-    # M1
-    #
-    input_wavefront = output_wavefront
-
-    output_wavefront, abscissas_on_mirror, height = calculate_output_wavefront_after_reflector1D(input_wavefront,
-                                                                                                 radius=496600.0,
-                                                                                                 grazing_angle=0.0218,
-                                                                                                 error_flag=0,
-                                                                                                 error_file="/home/manuel/Oasys/dabam_profile_139713533227224.dat",
-                                                                                                 write_profile=1)
-
-
-    #
-    # screen before M3
-    #
-    input_wavefront = output_wavefront
-
-    output_wavefront = propagate_to_M3(input_wavefront)
-
-#
-    #
-    # M3 (adaptive)
+    # re-run with a new correction
     #
 
     x = numpy.linspace(-0.135,0.135,100)
-    R = get_R_incidence_deg(13.73+13.599, 2.64, 90 - 1.25)
-    print(">>>>>>>>>>>>>>>> R",R,R.shape)
-    height = R - numpy.sqrt( R ** 2 - x ** 2)
+    height = x * 0
 
     f = open("tmp.dat",'w')
     for i in range(x.size):
@@ -275,27 +305,12 @@ if __name__ == "__main__":
 
     f.close()
 
+    output_wavefront = run_whole_beamline(error_file_M1="/home/manuel/Oasys/deformation.dat",
+                       correction_file_M3="tmp.dat")
 
-    input_wavefront = output_wavefront
-
-    output_wavefront, abscissas_on_mirror, height = calculate_output_wavefront_after_reflector1D_M3(input_wavefront,
-                                                                                                 radius=220000000000000.72,
-                                                                                                 grazing_angle=0.02181,
-                                                                                                 error_flag=1,
-                                                                                                 error_file="tmp.dat", #"/home/manuel/Oasys/correction_profile1D.dat",
-                                                                                                 write_profile=0)
-
-    #
-    #
-    #
-
-    input_wavefront = output_wavefront
-
-    output_wavefront= propagate_to_image(input_wavefront)
+    plot(output_wavefront.get_abscissas(), output_wavefront.get_intensity(), title="correction file tmp.dat")
 
 
-    from srxraylib.plot.gol import plot
-    plot(output_wavefront.get_abscissas(), output_wavefront.get_intensity())
 
 
 
