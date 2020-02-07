@@ -1,0 +1,23 @@
+{
+    "CLASS_NAME": "LightSource",
+    "name": "ALS BL2.4",
+    "electron_beam": {
+        "CLASS_NAME": "ElectronBeam",
+        "energy_in_GeV": 1.9,
+        "energy_spread": 0.001,
+        "current": 0.5,
+        "number_of_bunches": 400,
+        "moment_xx": 6.759999999999999e-10,
+        "moment_xxp": 0.0,
+        "moment_xpxp": 5.9290000000000005e-09,
+        "moment_yy": 1.0000000000000002e-10,
+        "moment_yyp": 0.0,
+        "moment_ypyp": 1.6e-11
+    },
+    "magnetic_structure": {
+        "CLASS_NAME": "BendingMagnet",
+        "radius": 1.2003253425691076,
+        "magnetic_field": 5.28,
+        "length": 0.345
+    }
+}

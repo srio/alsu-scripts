@@ -280,6 +280,22 @@ def run_whole_beamline(error_file_M1="/home/manuel/Oasys/dabam_profile_140327232
                                                  handler_name='FRESNEL_ZOOM_1D')
 
     return output_wavefront
+
+def get_surface_from_basis_and_coefficients(basis,coefficients= \
+        [-1.34111718e-08 ,2.89091778e-11 , 4.55787593e-07,  3.71667246e-08,
+          1.03623232e-07,  3.30400686e-08, -3.41480067e-09,  5.67368681e-10,
+         -1.08934818e-08, -1.67860465e-08, -9.94266810e-09, -1.41912905e-08,
+         -1.32628413e-08, -1.36259836e-08, -9.41153403e-09, -9.47141468e-09,
+         -5.08842152e-09, -6.38382702e-10, -5.57004604e-09, -2.95162052e-09,],
+                                            ):
+    out = 0
+    for i in range(len(coefficients)):
+        out += coefficients[i] * basis[:,i]
+    return out
+
+
+
+
 if __name__ == "__main__":
 
 
@@ -287,14 +303,20 @@ if __name__ == "__main__":
 
     from srxraylib.plot.gol import plot
 
+
+    #
+    # run using the perfect correction profile
+    #
+
     output_wavefront = run_whole_beamline(error_file_M1="/home/manuel/Oasys/deformation.dat",
                        correction_file_M3="/home/manuel/Oasys/correction.dat")
 
-    plot(output_wavefront.get_abscissas(), output_wavefront.get_intensity())
+    plot(output_wavefront.get_abscissas(), output_wavefront.get_intensity(),title="prefectly corrected")
 
     #
-    # re-run with a new correction
+    # run using zero correction
     #
+
 
     x = numpy.linspace(-0.135,0.135,100)
     height = x * 0
@@ -302,13 +324,61 @@ if __name__ == "__main__":
     f = open("tmp.dat",'w')
     for i in range(x.size):
         f.write("%g %g \n"%(x[i],height[i]))
-
     f.close()
+
 
     output_wavefront = run_whole_beamline(error_file_M1="/home/manuel/Oasys/deformation.dat",
                        correction_file_M3="tmp.dat")
 
-    plot(output_wavefront.get_abscissas(), output_wavefront.get_intensity(), title="correction file tmp.dat")
+    plot(output_wavefront.get_abscissas(), output_wavefront.get_intensity(), title="correction file tmp.dat: zero correction")
+
+
+
+    #
+    # run a correction from coefficients
+    #
+
+
+
+
+    # loads file with data to fit
+    input_array = numpy.loadtxt("/home/manuel/OASYS1.2/alsu-scripts/LEA/aps_axo_influence_functions2019.dat")
+    abscissas = input_array[:, 0].copy()
+    basis = numpy.loadtxt("/home/manuel/OASYS1.2/alsu-scripts/LEA/aps_axo_orthonormal_functions2019.dat")
+    #
+    print(">>>>basis",basis.shape)
+    coefficients = [-1.34111718e-08, 2.89091778e-11, 4.55787593e-07, 3.71667246e-08, \
+     1.03623232e-07, 3.30400686e-08, -3.41480067e-09, 5.67368681e-10, \
+     -1.08934818e-08, -1.67860465e-08, -9.94266810e-09, -1.41912905e-08, \
+     -1.32628413e-08, -1.36259836e-08, -9.41153403e-09, -9.47141468e-09, \
+     -5.08842152e-09, -6.38382702e-10, -5.57004604e-09, -2.95162052e-09, ]
+
+
+
+    # coefficients = numpy.random.random(20) * 1e-9
+    height0 = get_surface_from_basis_and_coefficients(basis,coefficients)
+
+
+
+    # abscissas for the mirror
+    x = numpy.linspace(-0.135,0.135,100)
+    height = numpy.interp(x,abscissas/1000,height0)
+    print(x)
+    #
+    plot(abscissas/1000,height0,x,height*1.1, legend=["evaluated from coeffcients","interpolated to the mirror coordinates"])
+    # plot(abscissas/1000, height0)
+    # plot(x, height)
+
+    f = open("tmp.dat",'w')
+    for i in range(x.size):
+        f.write("%g %g \n"%(x[i],height[i]))
+    f.close()
+
+
+    output_wavefront = run_whole_beamline(error_file_M1="/home/manuel/Oasys/deformation.dat",
+                       correction_file_M3="tmp.dat")
+
+    plot(output_wavefront.get_abscissas(), output_wavefront.get_intensity(), title="correction file tmp.dat: from coefficients")
 
 
 

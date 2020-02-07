@@ -290,6 +290,8 @@ if __name__ == "__main__":
     # compute the basis
     b, matrix = orthonormalize_a(a, mask=mask)
 
+    print(">>>>> matrix", matrix.shape)
+
     # plot basis
     b_array = numpy.zeros((input_array.shape[0],20))
 
@@ -300,10 +302,20 @@ if __name__ == "__main__":
 
     # perform the fit
     v = linear_2dgsfit1(u, b, mask=mask)
-    print("coefficients: ",v)
+    print("coefficients for orthonormal basis: ",v)
+
+    vinfl = numpy.dot(matrix,v)
+
+    print(matrix)
+    print("coefficients for influence functions basis: ", vinfl.shape,vinfl)
+
+
 
     # evaluate the fitted data form coefficients and basis
     y = linear_basis(v, b)
 
+    # evaluate the fitted data form coefficients and basis
+    yinfl = linear_basis(vinfl, a)
 
-    plot(abscissas,u,abscissas,y,legend=["Data","Fit"])
+    plot(abscissas, u, abscissas, y,legend=["Data", "Fit (orthonormal)"])
+    # plot(abscissas,u,abscissas,y,abscissas,yinfl,legend=["Data","Fit (orthonormal)","Fit (sorted influence)"])
