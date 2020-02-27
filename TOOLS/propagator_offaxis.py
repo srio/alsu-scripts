@@ -35,7 +35,7 @@ def goFromToSequential(field1,x1,y1,x2,y2,wavelength=1e-10):
     return field2
 
 
-if __name__ == '__main__':
+def diffraction_by_aperture():
 
     wavelength = 1.24e-10 # 10keV
     aperture_diameter = 40e-6 # 1e-3 # 1e-6
@@ -64,23 +64,6 @@ if __name__ == '__main__':
     fieldPhase = numpy.arctan2(numpy.real(field2), \
                                numpy.imag(field2))
 
-
-    #
-    # write spec formatted file
-    #
-    # out_file = "fresnel_kirchhoff_1D.spec"
-    # f = open(out_file, 'w')
-    # header="#F %s \n\n#S  1 fresnel-kirchhoff diffraction integral\n#N 3 \n#L X[m]  intensity  phase\n"%out_file
-    #
-    # f.write(header)
-    #
-    # for i in range(detpoints):
-    #    out = numpy.array((position2x[i], fieldIntensity[i], fieldPhase[i]))
-    #    f.write( ("%20.11e "*out.size+"\n") % tuple( out.tolist())  )
-    #
-    # f.close()
-    # print ("File written to disk: %s"%out_file)
-
     #
     #plots
     #
@@ -92,3 +75,93 @@ if __name__ == '__main__':
     plt.xlabel("X [um]")
     plt.ylabel("Intensity [a.u.]")
     plt.show()
+
+
+if __name__ == '__main__':
+    # diffraction_by_aperture()
+
+    import numpy
+
+
+    def calculate_wavefront1D(wavelength=1e-10,
+                              undulator_length=1.0, undulator_distance=10.0,
+                              x_min=-0.1, x_max=0.1, number_of_points=101,
+                              wavefront_position=0, add_random_phase=0):
+
+        from wofry.propagator.wavefront1D.generic_wavefront import GenericWavefront1D
+
+        sigma_r = 2.740 / 4 / numpy.pi * numpy.sqrt(wavelength * undulator_length)
+        sigma_r_prime = 0.69 * numpy.sqrt(wavelength / undulator_length)
+
+        wavefront1D = GenericWavefront1D.initialize_wavefront_from_range(x_min=x_min, x_max=x_max,
+                                                                         number_of_points=number_of_points)
+        wavefront1D.set_wavelength(wavelength)
+
+        if wavefront_position == 0:  # Gaussian source
+            wavefront1D.set_gaussian(sigma_x=sigma_r, amplitude=1.0, shift=0.0)
+        elif wavefront_position == 1:  # Spherical source, Gaussian intensity
+            wavefront1D.set_spherical_wave(radius=undulator_distance, center=0.0, complex_amplitude=complex(1, 0))
+            # weight with Gaussian
+            X = wavefront1D.get_abscissas()
+            A = wavefront1D.get_complex_amplitude()
+            sigma = undulator_distance * sigma_r_prime
+            sigma_amplitude = sigma * numpy.sqrt(2)
+            Gx = numpy.exp(-X * X / 2 / sigma_amplitude ** 2)
+            wavefront1D.set_complex_amplitude(A * Gx)
+
+        if add_random_phase:
+            wavefront1D.add_phase_shifts(2 * numpy.pi * numpy.random.random(wavefront1D.size()))
+
+        return wavefront1D
+
+
+    output_wavefront = calculate_wavefront1D(wavelength=4.9593679373280105e-09,
+                                             wavefront_position=1,
+                                             undulator_length=3.98,
+                                             undulator_distance=13.73,
+                                             x_min=-0.00147,
+                                             x_max=0.00147,
+                                             number_of_points=1000,
+                                             add_random_phase=0)
+    from srxraylib.plot.gol import plot
+
+    # plot(output_wavefront.get_abscissas(), output_wavefront.get_intensity())
+
+    #
+    # propagator
+    #
+
+    p = 1.25
+    q = 15.0
+    theta_grazing_in = 0.0015
+    theta_grazing_out = 0.0015
+    profile_file = "C:\\Users\\manuel\\Oasys\\correction_profile1D.dat"
+    zoom_factor = 0.5
+
+   # input field in mirror frame
+    x1 = output_wavefront.get_abscissas()
+    field1 = output_wavefront.get_complex_amplitude()
+    wavelength = output_wavefront.get_wavelength()
+
+    x1_oe = -p * numpy.cos(theta_grazing_in) + x1 * numpy.sin(theta_grazing_in)
+    y1_oe = p * numpy.sin(theta_grazing_in) + x1 * numpy.cos(theta_grazing_in)
+
+
+    a = numpy.loadtxt(profile_file)
+    x2_oe = a[:,0]
+    y2_oe = a[:,1]
+    print(a.shape)
+
+    field2 = goFromToSequential(field1,x1_oe,y1_oe,x2_oe,y2_oe,wavelength=wavelength)
+
+    # plot(x2, y2)
+    # plot(x2,numpy.abs(field2)**2)
+
+    x3 = x1 * zoom_factor #numpy.linspace(-725e-6,725e-6,x1.size)
+
+    x3_oe = q * numpy.cos(theta_grazing_out) + x3 * numpy.sin(theta_grazing_out)
+    y3_oe = q * numpy.sin(theta_grazing_out) + x3 * numpy.cos(theta_grazing_out)
+
+    field3 = goFromToSequential(field2, x2_oe, y2_oe, x3_oe, y3_oe, wavelength=wavelength)
+
+    plot(x3, numpy.abs(field3) ** 2)
