@@ -2,7 +2,7 @@ import numpy
 
 
 
-def fit_correction(filename, calculate=False):
+def fit_correction(filein, fileout="", calculate=False):
     from axo import orthonormalize_a, linear_2dgsfit1, linear_basis
 
     from srxraylib.plot.gol import plot, plot_table
@@ -13,7 +13,7 @@ def fit_correction(filename, calculate=False):
     abscissas = input_array[:, 0].copy()
     print("abscisas: ", abscissas)
 
-    tmp = numpy.loadtxt(correction_file_M3)
+    tmp = numpy.loadtxt(filein)
     print(">>>>>>>>>>>>>>>>>>", tmp.shape)
     plot(tmp[:, 0], tmp[:, 1], title="data to fit")
     u = numpy.interp(abscissas, 1000 * tmp[:, 0], tmp[:, 1])
@@ -25,8 +25,6 @@ def fit_correction(filename, calculate=False):
 
 
     if calculate:
-
-
         # prepare input format for orthonormalize_a
         col19 = input_array[:, 0].copy() * 0 + 1
         col20 = numpy.linspace(-1,1,input_array.shape[0])
@@ -75,43 +73,56 @@ def fit_correction(filename, calculate=False):
 
     plot(abscissas,u,abscissas,y,legend=["Data","Fit"])
 
-    f = open("/home/manuel/Oasys/correction_fitted.dat",'w')
-    for i in range(abscissas.size):
-        f.write("%g  %g \n"%(1e-3*abscissas[i],y[i]))
-    f.close()
-    print("File /home/manuel/Oasys/correction_fitted.dat written to disk")
+    if fileout != "":
+        f = open(fileout,'w')
+        for i in range(abscissas.size):
+            f.write("%g  %g \n"%(1e-3*abscissas[i],y[i]))
+        f.close()
+        print("File %s written to disk"%fileout)
 
     return v
 
 
 if __name__ == "__main__":
-    correction_file_M3 = "/home/manuel/Oasys/correction.dat"
+    # filein = "/home/manuel/Oasys/correction.dat"
+    # fileout = "/home/manuel/Oasys/correction_fitted.dat"
 
-    v = fit_correction(correction_file_M3)
+    root="/home/manuel/OASYS1.2/alsu-scripts/paper-wofry/correctioncryogenic"
 
-    print("Coefficients of the orthonormal basis: ")
-    v_labels = []
-    for i in range(v.size):
-        v_labels.append("v[%d]"%i)
-        print("v[%d] = %5.2f nm"%(i,1e9*v[i]))
+    ROOT = ["/home/manuel/OASYS1.2/alsu-scripts/paper-wofry/correctioncryogenic",
+            "/home/manuel/OASYS1.2/alsu-scripts/paper-wofry/correctioncryogenicKh",
+            "/home/manuel/OASYS1.2/alsu-scripts/paper-wofry/correctionwater1",
+            "/home/manuel/OASYS1.2/alsu-scripts/paper-wofry/correctionwater2"]
 
-    # import matplotlib.pyplot as plt
-    # fig = plt.figure()
-    # ax = fig.add_axes([0,0,1,1])
-    # ax.bar(v_labels,v)
-    # plt.show()
-    #
-    import matplotlib.pyplot as plt; plt.rcdefaults()
-    import numpy as np
-    import matplotlib.pyplot as plt
+    for root in ROOT:
+        filein = root+".txt"
+        fileout = root+"fit.txt"
 
-    # objects =   v_labels
-    y_pos = np.arange(v.size)
+        v = fit_correction(filein,fileout=fileout,calculate=False)
+
+        print("Coefficients of the orthonormal basis: ")
+        v_labels = []
+        for i in range(v.size):
+            v_labels.append("v[%d]"%i)
+            print("v[%d] = %5.2f nm"%(i,1e9*v[i]))
+
+        # import matplotlib.pyplot as plt
+        # fig = plt.figure()
+        # ax = fig.add_axes([0,0,1,1])
+        # ax.bar(v_labels,v)
+        # plt.show()
+        #
+        import matplotlib.pyplot as plt; plt.rcdefaults()
+        import numpy as np
+        import matplotlib.pyplot as plt
+
+        # objects =   v_labels
+        y_pos = np.arange(v.size)
 
 
-    plt.bar(y_pos, v, align='center', alpha=0.5)
-    plt.xticks(y_pos, v_labels)
-    plt.ylabel('Usage')
-    plt.title('Corfficients in ')
+        plt.bar(y_pos, v, align='center', alpha=0.5)
+        plt.xticks(y_pos, v_labels)
+        plt.ylabel('Usage')
+        plt.title('Corfficients in ')
 
-    plt.show()
+        plt.show()

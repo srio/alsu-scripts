@@ -24,7 +24,7 @@ def goFromToMatrix(field1, source, image, distance=1.0, wavelength=1e-10):
     return numpy.dot(field1, T)
 
 
-def goFromToSequential(field1,x1,y1,x2,y2,wavelength=1e-10):
+def goFromToSequential(field1,x1,y1,x2,y2,wavelength=1e-10,normalize_intensities=False):
     field2 = numpy.zeros_like(x2,dtype=complex)
     wavenumber = numpy.pi * 2 / wavelength
 
@@ -32,7 +32,45 @@ def goFromToSequential(field1,x1,y1,x2,y2,wavelength=1e-10):
         r = numpy.sqrt( numpy.power(x1-x2[i],2) + numpy.power(y1-y2[i],2) )
         field2[i] = ( field1 * numpy.exp(1.j * wavenumber * r) ).sum()
 
+    if normalize_intensities:
+        field2 *= numpy.sqrt( (numpy.abs(field1)**2).sum() / (numpy.abs(field2)**2).sum() )
     return field2
+
+
+def propagator1D_offaxis(input_wavefront,x2_oe,y2_oe,p,q,theta_grazing_in,theta_grazing_out=None,
+                         zoom_factor=1.0,normalize_intensities=False):
+
+    from wofry.propagator.wavefront1D.generic_wavefront import GenericWavefront1D
+
+    if theta_grazing_out is None:
+        theta_grazing_out = theta_grazing_in
+
+    x1 = input_wavefront.get_abscissas()
+    field1 = input_wavefront.get_complex_amplitude()
+    wavelength = input_wavefront.get_wavelength()
+
+    x1_oe = -p * numpy.cos(theta_grazing_in) + x1 * numpy.sin(theta_grazing_in)
+    y1_oe = p * numpy.sin(theta_grazing_in) + x1 * numpy.cos(theta_grazing_in)
+
+    print(a.shape)
+
+    # field2 is the electric field in the mirror
+    field2 = goFromToSequential(field1, x1_oe, y1_oe, x2_oe, y2_oe,
+                                wavelength=wavelength,normalize_intensities=normalize_intensities)
+
+    x3 = x1 * zoom_factor
+
+    x3_oe = q * numpy.cos(theta_grazing_out) + x3 * numpy.sin(theta_grazing_out)
+    y3_oe = q * numpy.sin(theta_grazing_out) + x3 * numpy.cos(theta_grazing_out)
+
+    # field2 is the electric field in the image plane
+    field3 = goFromToSequential(field2, x2_oe, y2_oe, x3_oe, y3_oe,
+                                wavelength=wavelength, normalize_intensities=normalize_intensities)
+
+
+    output_wavefront = GenericWavefront1D.initialize_wavefront_from_arrays(x3, field3, wavelength=wavelength)
+
+    return output_wavefront
 
 
 def diffraction_by_aperture():
@@ -121,7 +159,7 @@ if __name__ == '__main__':
                                              undulator_distance=13.73,
                                              x_min=-0.00147,
                                              x_max=0.00147,
-                                             number_of_points=1000,
+                                             number_of_points=3001,
                                              add_random_phase=0)
     from srxraylib.plot.gol import plot
 
@@ -131,37 +169,25 @@ if __name__ == '__main__':
     # propagator
     #
 
+    input_wavefront = output_wavefront.duplicate()
+
     p = 1.25
     q = 15.0
     theta_grazing_in = 0.0015
-    theta_grazing_out = 0.0015
-    profile_file = "C:\\Users\\manuel\\Oasys\\correction_profile1D.dat"
+    # theta_grazing_out = 0.0015
     zoom_factor = 0.5
 
-   # input field in mirror frame
-    x1 = output_wavefront.get_abscissas()
-    field1 = output_wavefront.get_complex_amplitude()
-    wavelength = output_wavefront.get_wavelength()
-
-    x1_oe = -p * numpy.cos(theta_grazing_in) + x1 * numpy.sin(theta_grazing_in)
-    y1_oe = p * numpy.sin(theta_grazing_in) + x1 * numpy.cos(theta_grazing_in)
-
-
+    profile_file = "/home/manuel/Oasys/correction_profile1D.dat"  # "C:\\Users\\manuel\\Oasys\\correction_profile1D.dat"
     a = numpy.loadtxt(profile_file)
     x2_oe = a[:,0]
     y2_oe = a[:,1]
+
+    output_wavefront = propagator1D_offaxis(input_wavefront, x2_oe, y2_oe, p, q, theta_grazing_in, theta_grazing_out=None,
+                         zoom_factor=zoom_factor,normalize_intensities=True)
+
+
+    # plot(output_wavefront.get_abscissas(), output_wavefront.get_intensity())
+
     print(a.shape)
-
-    field2 = goFromToSequential(field1,x1_oe,y1_oe,x2_oe,y2_oe,wavelength=wavelength)
-
-    # plot(x2, y2)
-    # plot(x2,numpy.abs(field2)**2)
-
-    x3 = x1 * zoom_factor #numpy.linspace(-725e-6,725e-6,x1.size)
-
-    x3_oe = q * numpy.cos(theta_grazing_out) + x3 * numpy.sin(theta_grazing_out)
-    y3_oe = q * numpy.sin(theta_grazing_out) + x3 * numpy.cos(theta_grazing_out)
-
-    field3 = goFromToSequential(field2, x2_oe, y2_oe, x3_oe, y3_oe, wavelength=wavelength)
-
-    plot(x3, numpy.abs(field3) ** 2)
+    print("wf1 intensity", input_wavefront.get_intensity().sum())
+    print("wf2 intensity", output_wavefront.get_intensity().sum())

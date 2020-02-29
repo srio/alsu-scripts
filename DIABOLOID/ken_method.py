@@ -135,47 +135,98 @@ def ken_diaboloid_segment_to_point(
 
 if __name__ == "__main__":
 
-    path_linux = "/home/manuel/Oasys/"
-    path_windows = "c:\\Users\\manuel\\Oasys/"
-    # #
-    # # point to segment
-    # #
-    # p = 29.3
-    # q = 19.53
-    # theta = 4.5e-3
-    # y = numpy.linspace(-0.1, 0.1, 1001)
-    # x = numpy.linspace(-0.01,0.01, 101)
-    #
-    # Z, X, Y = ken_diaboloid_point_to_segment(p,q,theta,x,y,
-    #                                          detrend=True,
-    #                                          filename_shadow='',
-    #                                          filename_h5=path_windows+"diaboloid_ken_point_to_segment.h5")
-    #
-    #
-    #
-    # from srxraylib.plot.gol import plot_image, plot
-    # plot_image(Z,1e3*x,1e3*y,aspect='auto')
+    path = "/home/manuel/Oasys/"
+    # path = "c:\\Users\\manuel\\Oasys/"
 
-    # write_surface_file(Z.T, x, y, path_windows+"tmp_ken.h5", overwrite=True)
-    #
-    # Wayne system
-    #
+    system = 'wayne'
+    # system = 'point_to_segment'
+    system = 'bl12.2.2'
+    system = 'bl12.2.2_high_demag'
 
-    #
-    # point to segment
-    #
-    source_diaboloid = 19.54
-    diaboloid_image = 9.77
-    theta = 4.5e-3
-    y = numpy.linspace(-0.361, 0.361, 1001)
-    x = numpy.linspace(-0.015,0.015, 101)
+    if system == 'point_to_segment':
+        #
+        # point to segment
+        #
+        p = 29.3
+        q = 19.53
+        theta = 4.5e-3
+        y = numpy.linspace(-0.1, 0.1, 1001)
+        x = numpy.linspace(-0.01,0.01, 101)
 
-    Z, X, Y = ken_diaboloid_segment_to_point(source_diaboloid,diaboloid_image,theta,x,y,
-                                             detrend=True,
-                                             filename_shadow='',
-                                             filename_h5=path_windows+"diaboloid_mckinney_ken_method.h5")
+        Z, X, Y = ken_diaboloid_point_to_segment(p,q,theta,x,y,
+                                                 detrend=True,
+                                                 filename_shadow='',
+                                                 filename_h5=path+"diaboloid_ken_point_to_segment.h5")
 
-    # Z, X, Y = ken_diaboloid_point_to_segment(diaboloid_image,source_diaboloid,theta,x,y,
-    #                                          detrend=True,
-    #                                          filename_shadow='',
-    #                                          filename_h5=path_windows+"diaboloid_mckinney_ken_method.h5")
+
+
+        from srxraylib.plot.gol import plot_image, plot
+        plot_image(Z,1e3*x,1e3*y,aspect='auto')
+
+    elif system == 'wayne':
+
+        # write_surface_file(Z.T, x, y, path_windows+"tmp_ken.h5", overwrite=True)
+        #
+        # Wayne system
+        #
+
+        #
+        # point to segment
+        #
+        source_diaboloid = 19.54
+        diaboloid_image = 9.77
+        theta = 4.5e-3
+        y = numpy.linspace(-0.361, 0.361, 1001)
+        x = numpy.linspace(-0.015,0.015, 101)
+
+        Z, X, Y = ken_diaboloid_segment_to_point(source_diaboloid,diaboloid_image,theta,x,y,
+                                                 detrend=True,
+                                                 filename_shadow='',
+                                                 filename_h5=path+"diaboloid_mckinney_ken_method.h5")
+
+        # Z, X, Y = ken_diaboloid_point_to_segment(diaboloid_image,source_diaboloid,theta,x,y,
+        #                                          detrend=True,
+        #                                          filename_shadow='',
+        #                                          filename_h5=path_windows+"diaboloid_mckinney_ken_method.h5")
+
+    elif system == 'bl12.2.2':
+
+        # write_surface_file(Z.T, x, y, path_windows+"tmp_ken.h5", overwrite=True)
+        #
+        # Wayne system
+        #
+
+        #
+        # point to segment
+        #
+        source_diaboloid = 18.8
+        diaboloid_image = 26.875-source_diaboloid
+        theta = 2e-3
+        y = numpy.linspace(-0.4, 0.4, 1001)
+        x = numpy.linspace(-0.015,0.015, 101)
+
+        Z, X, Y = ken_diaboloid_segment_to_point(source_diaboloid,diaboloid_image,theta,x,y,
+                                                 detrend=True,
+                                                 filename_shadow='',
+                                                 filename_h5=path+"diaboloid_bl1222_ken_method.h5")
+
+    elif system == 'bl12.2.2_high_demag':
+
+        # write_surface_file(Z.T, x, y, path_windows+"tmp_ken.h5", overwrite=True)
+        #
+        # Wayne system
+        #
+
+        #
+        # point to segment
+        #
+        source_diaboloid = 18.8
+        diaboloid_image = 3.76
+        theta = 2e-3
+        y = numpy.linspace(-0.4, 0.4, 1001)
+        x = numpy.linspace(-0.01, 0.01, 101)
+
+        Z, X, Y = ken_diaboloid_segment_to_point(source_diaboloid, diaboloid_image, theta, x, y,
+                                                 detrend=True,
+                                                 filename_shadow='',
+                                                 filename_h5=path + "diaboloid_bl1222_high_demag_ken_method.h5")

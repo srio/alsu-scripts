@@ -151,6 +151,7 @@ if __name__ == "__main__":
     import h5py
 
     h = H5SimpleWriter.initialize_file("IR_BM_shadow3_scan.h5")
+
     Incidence = 90.0 - Grazing
     
     for i,incidence in enumerate(Incidence):
