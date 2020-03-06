@@ -1,6 +1,6 @@
 import Shadow
 
-def run_shadow(monochromatic=0):
+def run_shadow(monochromatic=0,crystal="111",asymmetry=0.1,deform_second_crystal=True, R_JOHANSSON=-3750.0 ):
     #
     # Python script to run shadow3. Created automatically with ShadowTools.make_python_script_from_list().
     #
@@ -73,41 +73,81 @@ def run_shadow(monochromatic=0):
     oe1.T_REFLECTION = 89.7421689922
     oe1.T_SOURCE = 650.0
 
+
+
+    oe2.ALPHA = 0
     oe2.DUMMY = 1.0
-    oe2.FILE_REFL = b'/home/manuel/Oasys/bragg.dat'
+    if crystal == "111":
+        oe2.FILE_REFL = b'/home/manuel/Oasys/bragg.dat'
+    elif crystal == "333":
+        oe2.FILE_REFL = b'/home/manuel/Oasys/Si5_25.333'
+    else:
+        raise Exception("Bad reflection")
+    oe2.FILE_RIP = b'//home/manuel/OASYS1.2/alsu-scripts/GEMINI/BL822_crystal_error_shadow.dat'
     oe2.FWRITE = 1
     oe2.F_CENTRAL = 1
     oe2.F_CRYSTAL = 1
+    oe2.F_G_S = 2
     oe2.PHOT_CENT = 12400.0
     oe2.R_LAMBDA = 5000.0
+    oe2.THICKNESS = 10.0
     oe2.T_IMAGE = 0.0
-    oe2.T_INCIDENCE = 80.824080911
-    oe2.T_REFLECTION = 80.824080911
-    oe2.T_SOURCE = 0.0
-
-    oe3.ALPHA = 180.0
-    oe3.DUMMY = 1.0
-    oe3.FILE_REFL = b'/home/manuel/Oasys/bragg.dat'
-    oe3.FILE_RIP = b'//home/manuel/OASYS1.2/alsu-scripts/GEMINI/BL822_crystal_error_shadow.dat'
-    oe3.FWRITE = 1
-    oe3.F_CENTRAL = 1
-    oe3.F_CRYSTAL = 1
-    oe3.F_G_S = 2
-    oe3.PHOT_CENT = 12400.0
-    oe3.R_LAMBDA = 5000.0
-    oe3.THICKNESS = 10.0
-    oe3.T_IMAGE = 0.0
-    oe3.T_INCIDENCE = 80.6539124458
-    oe3.T_REFLECTION = 80.9936764183
-    oe3.F_EXT = 1
+    oe2.T_INCIDENCE = 80.6539124458
+    oe2.T_REFLECTION = 80.9936764183
+    oe2.F_EXT = 1
+    oe2.FWRITE = 0
+    oe2.R_JOHANSSON = R_JOHANSSON
+    oe2.A_BRAGG = asymmetry
+    oe2.F_BRAGG_A = 1
+    oe2.F_JOHANSSON = 1
+    oe2.F_RIPPLE = 1
 
 
-    oe3.FWRITE = 0
-    oe3.R_JOHANSSON = -333.33
-    oe3.A_BRAGG = 0 #.17
-    oe3.F_BRAGG_A = 1
-    oe3.F_JOHANSSON = 1
-    oe3.F_RIPPLE = 1
+
+
+    if deform_second_crystal:
+        oe3.ALPHA = 180.0
+        oe3.DUMMY = 1.0
+        if crystal == "111":
+            oe3.FILE_REFL = b'/home/manuel/Oasys/bragg.dat'
+        elif crystal == "333":
+            oe3.FILE_REFL = b'/home/manuel/Oasys/Si5_25.333'
+        else:
+            raise Exception("Bad reflection")
+
+        oe3.FILE_RIP = b'//home/manuel/OASYS1.2/alsu-scripts/GEMINI/BL822_crystal_error_shadow.dat'
+        oe3.FWRITE = 1
+        oe3.F_CENTRAL = 1
+        oe3.F_CRYSTAL = 1
+        oe3.F_G_S = 2
+        oe3.PHOT_CENT = 12400.0
+        oe3.R_LAMBDA = 5000.0
+        oe3.THICKNESS = 10.0
+        oe3.T_IMAGE = 0.0
+        oe3.T_INCIDENCE = 80.6539124458
+        oe3.T_REFLECTION = 80.9936764183
+        oe3.F_EXT = 1
+        oe3.FWRITE = 0
+        oe3.R_JOHANSSON = R_JOHANSSON
+        oe3.A_BRAGG = asymmetry
+        oe3.F_BRAGG_A = 1
+        oe3.F_JOHANSSON = 1
+        oe3.F_RIPPLE = 1
+    else:
+        oe3.ALPHA = 180.0
+        oe3.DUMMY = 1.0
+        oe3.FILE_REFL = b'/home/manuel/Oasys/bragg.dat'
+        oe3.FWRITE = 0
+        oe3.F_CENTRAL = 1
+        oe3.F_CRYSTAL = 1
+        oe3.PHOT_CENT = 12400.0
+        oe3.R_LAMBDA = 5000.0
+        oe3.T_IMAGE = 0.0
+        oe3.T_INCIDENCE = 80.824080911
+        oe3.T_REFLECTION = 80.824080911
+        oe3.T_SOURCE = 0.0
+
+
 
     # oe3.ALPHA = 180.0
     # oe3.DUMMY = 1.0

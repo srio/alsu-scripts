@@ -36,8 +36,8 @@ x = numpy.linspace(-Lx/2,Lx/2,41)
 radius_y = -get_radius("X")
 radius_x =  get_radius("Y")
 
-radius_y = -get_radius("howard")
-radius_x =  get_radius("howard") #/ 10
+# radius_y = -get_radius("howard")
+# radius_x =  get_radius("howard") #/ 10
 
 # radius_y = -1000.0
 # radius_x = 1000.0
