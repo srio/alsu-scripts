@@ -9,14 +9,24 @@ matplotlib.rc('ytick',         labelsize=20)
 matplotlib.rcParams.update({'font.size': 20})
 
 
-is_fit = True
+is_fit = 1
 
-if is_fit:
+if is_fit == 0:
+    filenames = ["intensityundeformed", "intensitycryogenic", "intensitycryogenicKh",
+                 "intensitywater1", "intensitywater2"]
+    filepng = "intensityundeformed.png"
+elif is_fit == 1:
+    filenames = ["intensityundeformed","intensitycryogeniccorrected","intensitycryogenicKhcorrected",
+                 "intensitywater1corrected","intensitywater2corrected"]
+    filepng = "intensitycorrected.png"
+elif is_fit == 2:
     filenames = ["intensityundeformed", "intensitycryogeniccorrectedfit", "intensitycryogenicKhcorrectedfit",
                  "intensitywater1correctedfit", "intensitywater2correctedfit"]
-else:
-    filenames = ["intensityundeformed","intensitycryogeniccorrected","intensitycryogenicKhcorrected","intensitywater1corrected","intensitywater2corrected"]
-
+    filepng = "intensitycorrectedfit.png"
+elif is_fit == 3:
+    filenames = ["intensityundeformed", "intensitycryogeniccorrectedfitcrop", "intensitycryogenicKhcorrectedfitcrop",
+                 "intensitywater1correctedfitcrop", "intensitywater2correctedfitcrop"]
+    filepng = "intensitycorrectedfitcrop.png"
 
 # filename = "cryogenic1d.txt"
 
@@ -55,11 +65,13 @@ for i in range(1,len(filenames)):
 
 fig = plt.figure(figsize=(16,8))
 
-plt.plot(X[1], Y[1]+0,label=LEGEND[1-1])
-plt.plot(X[2], Y[2]+50,label=LEGEND[2-1])
-plt.plot(X[3], Y[3]+100,label=LEGEND[3-1])
-plt.plot(X[4], Y[4]+150,label=LEGEND[4-1])
+plt.plot(X[1], Y[1]+150,label=LEGEND[1-1])
+plt.plot(X[2], Y[2]+100,label=LEGEND[2-1])
+plt.plot(X[3], Y[3]+50,label=LEGEND[3-1])
+plt.plot(X[4], Y[4]+0,label=LEGEND[4-1])
 # plt.title(title)
+plt.xlim(-10,10)
+plt.ylim(0,370)
 plt.xlabel("X [$\mu$m]")
 plt.ylabel("intensity [a.u.]")
 
@@ -71,8 +83,6 @@ plt.ylabel("intensity [a.u.]")
 ax = plt.subplot(111)
 ax.legend(bbox_to_anchor=[.7,.55])
 
-if is_fit:
-    plt.savefig("intensitycorrectedfit.png")
-else:
-    plt.savefig("intensitycorrected.png")
+
+plt.savefig(filepng)
 plt.show()

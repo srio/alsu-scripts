@@ -8,13 +8,21 @@ matplotlib.rc('xtick',         labelsize=20)
 matplotlib.rc('ytick',         labelsize=20)
 matplotlib.rcParams.update({'font.size': 20})
 
-is_fit = True
+is_fit = 2
 
-if is_fit:
-    filenames = ["correctioncryogenicfit","correctioncryogenicKhfit","correctionwater1fit","correctionwater2fit"]
-else:
+
+if is_fit == 0:
     filenames = ["correctioncryogenic","correctioncryogenicKh","correctionwater1","correctionwater2"]
-
+    filepng = "correctedprofiles.png"
+    factor = 1
+elif is_fit == 1:
+    filenames = ["correctioncryogenicfit","correctioncryogenicKhfit","correctionwater1fit","correctionwater2fit"]
+    filepng = "correctedprofilesfit.png"
+    factor = 1
+elif is_fit == 2:
+    filenames = ["correctioncryogenicfitextrapolated","correctioncryogenicKhfitextrapolated","correctionwater1fitextrapolated","correctionwater2fitextrapolated"]
+    filepng = "correctedprofilesfitextrapolated.png"
+    factor = 1e-6
 # filename = "cryogenic1d.txt"
 
 
@@ -45,11 +53,13 @@ for i in range(len(filenames)):
 
 fig = plt.figure(figsize=(16,8))
 
-plt.plot(1e3*X[1-1], 1e6*Y[1-1]+0  ,label=LEGEND[1-1])
-plt.plot(1e3*X[2-1], 1e6*Y[2-1]+0  ,label=LEGEND[2-1])
-plt.plot(1e3*X[3-1], 1e6*Y[3-1]+0  ,label=LEGEND[3-1])
-plt.plot(1e3*X[4-1], 1e6*Y[4-1]+0  ,label=LEGEND[4-1])
+plt.plot(1e3*X[1-1], factor*1e6*Y[1-1]+0  ,label=LEGEND[1-1], color='blue')
+plt.plot(1e3*X[2-1], factor*1e6*Y[2-1]+0  ,label=LEGEND[2-1], color='orange')
+plt.plot(1e3*X[3-1], factor*1e6*Y[3-1]+0  ,label=LEGEND[3-1], color='green')
+plt.plot(1e3*X[4-1], factor*1e6*Y[4-1]+0  ,label=LEGEND[4-1], color='red')
 # plt.title(title)
+plt.xlim(-150,150)
+plt.ylim(-0.05,0.5)
 plt.xlabel("w [mm]")
 plt.ylabel("height [$\mu$m]")
 
@@ -61,9 +71,7 @@ plt.ylabel("height [$\mu$m]")
 ax = plt.subplot(111)
 ax.legend(bbox_to_anchor=[.49,.95])
 
-if is_fit:
-    plt.savefig("correctedprofilesfit.png")
-else:
-    plt.savefig("correctedprofiles.png")
+
+plt.savefig(filepng)
 
 plt.show()
