@@ -158,16 +158,29 @@ if __name__ == "__main__":
 
     Mg = rgp / rg
 
-    print("L=%f m, Mm=%f"%(L,Mm))
-    print("M3 p=%f m, q=%f m, Mm=%f"%(s,sp,Mm))
-    print("G p=%f m, q=%f m, Mg=%f"%(rg,rgp,Mg))
-
+    k0 = 114000.0
+    energy0 = 603.0
     #
     # solve for c (Eq. 5.6 ALS-U CDR)
     #
     c = rgp * s / (L * sp - rgp * sp)
+    #
+    # new data (flexon for wofry paper)
+    #
+    rg = 25.73
+    rgp = 4.239
+    s = rg
+    sp = rgp
+    L = rg + rgp
+    m = 1
+    c = 1.51
+    k0 = 300000.0 # 114000.0
+    energy0 = 250.0 # 603.0
 
 
+    print("L=%f m, Mm=%f"%(L,Mm))
+    print("M3 p=%f m, q=%f m, Mm=%f"%(s,sp,Mm))
+    print("G p=%f m, q=%f m, Mg=%f"%(rg,rgp,Mg))
     print("c = %f"%c)
 
 
@@ -175,8 +188,7 @@ if __name__ == "__main__":
     # get angles
     #
 
-    k0 = 114000.0
-    energy0 = 603.0
+
     lambda0 = m2ev / energy0
 
     sinalpha,sinbeta = solve_grating_equation(line_density=k0,wavelength=lambda0,c=c,order=m)
