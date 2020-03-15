@@ -28,11 +28,9 @@ def create_grating(lines_per_m=300000.0,grating_length=0.150,points_per_period=9
         from scipy.signal import square
         y = (square(2 * numpy.pi * x / period, duty=0.5) + 1) / 2
     elif form_code == 3: # vls
-        from scipy.signal import square
-        period0 = 1.0 / vls[0] * numpy.ones_like(x)
-        period = 1.0 / (vls[0] + vls[1] * x + vls[2] * x**2 + vls[3] * x**3)
-        y = square(2 * numpy.pi * x / period, duty=(0.5 * period / period0))
-        # y = square(2 * numpy.pi * x / period, duty=0.5)
+        from scipy.signal import sweep_poly
+        p = numpy.poly1d([vls[3],vls[2],vls[1], vls[0]])
+        y = numpy.ceil( sweep_poly(x, p ) )
 
     return x,y
 
@@ -42,8 +40,29 @@ if __name__ == "__main__":
     matplotlib.rc('axes.formatter', useoffset=False)
     lines_per_m=300000
     period = 1. / lines_per_m
-    x,y = create_grating(lines_per_m=300000,grating_length=0.150,points_per_period=11,form_code=3)
+    x,y = create_grating(lines_per_m=300000,grating_length=0.150,points_per_period=12,form_code=3)
 
-    plot(1e3*x,y ,xrange=[-75,-74.98],marker='o')
+    # y *= -1
+    # y += 1
+    y *= 10e-9
+
+    # plot(1e3*x,y ,xrange=[-75,-74.98],marker='o')
     print("Number of points: ",x.size)
+
+    filename = "C:/Users/manuel/Oasys/VLS_FLEXON_myscript.txt"
+    if filename != "":
+        f = open(filename,'w')
+        for i in range(x.size):
+            f.write("%g %g\n"%(x[i],y[i]))
+        f.close()
+        print("File written to disk: %s"%filename)
+
+    b = numpy.loadtxt("C:/Users/Manuel/Oasys/VLS_FLEXON.txt")
+    xb = b[:,0]
+    yb = b[:,1]
+
+    plot(1e3*x,y,1e3*xb,yb,legend=["mio","daniele"],xrange=[-75+148.98,-74.98+148.98],show=0)
+    plot(1e3 * x, y, 1e3 * xb, yb, legend=["mio", "daniele"], xrange=[-75 , -74.98],show=0)
+    plot(1e3 * x, y, 1e3 * xb, yb, legend=["mio", "daniele"], xrange=[-0.1, 0.1])
+
     # plot(1e6*x,y)
