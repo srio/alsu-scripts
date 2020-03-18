@@ -7,6 +7,85 @@ from srxraylib.plot.gol import plot
 # aux function (pasted from oasys)
 #
 
+def fit_correction(filein, fileout="", calculate=False):
+    from axo import orthonormalize_a, linear_2dgsfit1, linear_basis
+
+    from srxraylib.plot.gol import plot, plot_table
+
+    # loads file with data to fit
+    input_array = numpy.loadtxt("aps_axo_influence_functions2019.dat")
+
+    abscissas = input_array[:, 0].copy()
+    print("abscisas: ", abscissas)
+
+    tmp = numpy.loadtxt(filein)
+    print(">>>>>>>>>>>>>>>>>>", tmp.shape)
+    # plot(tmp[:, 0], tmp[:, 1], title="data to fit")
+    u = numpy.interp(abscissas, 1000 * tmp[:, 0], tmp[:, 1])
+    # plot(abscissas, u, title="Result of fit")
+
+    sigma = (abscissas[-1] - abscissas[0])
+    g = 15 * numpy.exp(- abscissas ** 2 / 2 / sigma)
+    mask = None  # g
+
+
+    if calculate:
+        # prepare input format for orthonormalize_a
+        col19 = input_array[:, 0].copy() * 0 + 1
+        col20 = numpy.linspace(-1,1,input_array.shape[0])
+
+        a = []
+        a.append({'a': col19, 'total_squared': 0})
+        a.append({'a': col20, 'total_squared': 0})
+        for i in [9, 10, 8, 11, 7, 12, 6, 13, 5, 14, 4, 15, 3, 16, 2, 17, 1, 18]:
+            a.append({'a': input_array[:, i], 'total_squared':0})
+
+        # plot_table(abscissas, input_array[:, 1:].T, title="influence functions")
+
+
+
+
+
+
+        # compute the basis
+        b, matrix = orthonormalize_a(a, mask=mask)
+
+        # plot basis
+        b_array = numpy.zeros((input_array.shape[0],20))
+
+
+        for i in range(20):
+            b_array[:,i] = b[i]["a"]
+        plot_table(abscissas, b_array.T, title="basis functions")
+
+
+        numpy.savetxt("aps_axo_orthonormal_functions2019.dat",b_array)
+        print("File written to disk aps_axo_orthonormal_functions2019.dat")
+    else:
+        b_array = numpy.loadtxt("aps_axo_orthonormal_functions2019.dat")
+        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",b_array.shape)
+        b = []
+        for i in range(b_array.shape[1]):
+            b.append({'a': b_array[:, i], 'total_squared':(b_array[:, i]**2).sum()})
+
+    # perform the fit
+    v = linear_2dgsfit1(u, b, mask=mask)
+    print("coefficients: ",v)
+
+    # evaluate the fitted data form coefficients and basis
+    y = linear_basis(v, b)
+
+
+    # plot(abscissas,u,abscissas,y,legend=["Data","Fit"])
+
+    if fileout != "":
+        f = open(fileout,'w')
+        for i in range(abscissas.size):
+            f.write("%g  %g \n"%(1e-3*abscissas[i],y[i]))
+        f.close()
+        print("File %s written to disk"%fileout)
+
+    return v
 
 def calculate_wavefront1D(wavelength=1e-10,
                           undulator_length=1.0, undulator_distance=10.0,
@@ -39,35 +118,71 @@ def calculate_wavefront1D(wavelength=1e-10,
     return wavefront1D
 
 
-def calculate_output_wavefront_after_reflector1D(input_wavefront, radius=10000.0, grazing_angle=1.5e-3, error_flag=0,
-                                                 error_file="", write_profile=0):
+def calculate_output_wavefront_after_reflector1D(input_wavefront, shape=1, radius=10000.0, number_of_ripples=1.0,grazing_angle=1.5e-3,
+                                                 error_flag=0, error_file="", error_edge_management=0, write_profile=0):
     import numpy
     from scipy import interpolate
+
     output_wavefront = input_wavefront.duplicate()
     abscissas = output_wavefront.get_abscissas()
     abscissas_on_mirror = abscissas / numpy.sin(grazing_angle)
-    if radius >= 0:
-        height = radius - numpy.sqrt(radius ** 2 - abscissas_on_mirror ** 2)
+
+    if shape == 0:
+        height = numpy.zeros_like(abscissas_on_mirror)
+    elif shape == 1:
+        if radius >= 0:
+            height = radius - numpy.sqrt(radius ** 2 - abscissas_on_mirror ** 2)
+        else:
+            height = radius + numpy.sqrt(radius ** 2 - abscissas_on_mirror ** 2)
+    elif shape == 2:
+
+        if number_of_ripples == 0:
+            height = abscissas_on_mirror * 0
+        else:
+            period = (abscissas_on_mirror[-1] - abscissas_on_mirror[0]) / number_of_ripples
+            y = numpy.cos(2 * numpy.pi * abscissas_on_mirror / period)
+
+            y -= y.min()
+            y /= y.max()
+            y *= 20e-9
+
+            height = y
+
     else:
-        height = radius + numpy.sqrt(radius ** 2 - abscissas_on_mirror ** 2)
+        raise Exception("Wrong shape")
 
     if error_flag:
-        a = numpy.loadtxt(error_file)
-        finterpolate = interpolate.interp1d(a[:, 0], a[:, 1], fill_value="extrapolate")
+        a = numpy.loadtxt(error_file)  # extrapolation
+        if error_edge_management == 0:
+            finterpolate = interpolate.interp1d(a[:, 0], a[:, 1],
+                                                fill_value="extrapolate")  # fill_value=(0,0),bounds_error=False)
+        elif error_edge_management == 1:
+            finterpolate = interpolate.interp1d(a[:, 0], a[:, 1], fill_value=(0, 0), bounds_error=False)
+        else:  # crop
+            raise Exception("Bad value of error_edge_management")
         height_interpolated = finterpolate(abscissas_on_mirror)
         height += height_interpolated
 
     phi = -2 * output_wavefront.get_wavenumber() * height * numpy.sin(grazing_angle)
+
     output_wavefront.add_phase_shifts(phi)
 
-    # print("Wavefront limits [um]: %f %f" % (
-    # 1e6 * input_wavefront.get_abscissas().min(), 1e6 * input_wavefront.get_abscissas().max()))
     if error_flag:
-        # print("profile deformation limits [m]: %f %f" % (a[0, 0], a[-1, 0]))
-        # print("profile deformation projected limits [um]: %f um %f um" %
-        #       (1e6 * a[0, 0] * numpy.sin(grazing_angle), 1e6 * a[-1, 0] * numpy.sin(grazing_angle)))
-        # print("Wavefront clipped to projected limits of profile deformation")
-        output_wavefront.clip(a[0, 0] * numpy.sin(grazing_angle), a[-1, 0] * numpy.sin(grazing_angle))
+        profile_limits = a[-1, 0] - a[0, 0]
+        profile_limits_projected = (a[-1, 0] - a[0, 0]) * numpy.sin(grazing_angle)
+        wavefront_dimension = output_wavefront.get_abscissas()[-1] - output_wavefront.get_abscissas()[0]
+        print("profile deformation dimension: %f m" % (profile_limits))
+        print("profile deformation projected perpendicular to optical axis: %f um" % (1e6 * profile_limits_projected))
+        print("wavefront window dimension: %f um" % (1e6 * wavefront_dimension))
+
+        if wavefront_dimension <= profile_limits_projected:
+            print("\nWavefront window inside error profile domain: no action needed")
+        else:
+            if error_edge_management == 0:
+                print("\nProfile deformation extrapolated to fit wavefront dimensions")
+            else:
+                output_wavefront.clip(a[0, 0] * numpy.sin(grazing_angle), a[-1, 0] * numpy.sin(grazing_angle))
+                print("\nWavefront clipped to projected limits of profile deformation")
 
     # output files
     if write_profile:
@@ -126,10 +241,12 @@ def calculate_output_wavefront_after_corrector1D(input_wavefront, grazing_angle=
     return output_wavefront, target_wavefront, abscissas_on_mirror, height
 
 
+
 #
 # create input_wavefront
 #
 
+# def source(photon_energy=250,number_of_points=3001*100,x_max=0.00147*12):
 def source(photon_energy=250,number_of_points=3001*50,x_max=0.00147*4):
 # def source(photon_energy=250, number_of_points=3001, x_max=0.00147):
     import scipy.constants as codata
@@ -150,13 +267,16 @@ def source(photon_energy=250,number_of_points=3001*50,x_max=0.00147*4):
 
     return output_wavefront
 
-def M1(input_wavefront,radius=100000.0):
+def M1(input_wavefront,number_of_ripples=1.0):
 
     output_wavefront, abscissas_on_mirror, height = calculate_output_wavefront_after_reflector1D(input_wavefront,
-                                                                                                 radius=radius,
+                                                                                                 shape=2,
+                                                                                                 radius=100000,
+                                                                                                 number_of_ripples=number_of_ripples,
                                                                                                  grazing_angle=0.0218,
                                                                                                  error_flag=0,
                                                                                                  error_file="/home/manuel/Oasys/dabam_profile_140481269429160.dat",
+                                                                                                 error_edge_management=1,
                                                                                                  write_profile=0)
     if do_plot:
         plot_wavefront_intensity(output_wavefront,title="M1")
@@ -232,10 +352,12 @@ def M3(input_wavefront):
     #
 
     output_wavefront, abscissas_on_mirror, height = calculate_output_wavefront_after_reflector1D(input_wavefront,
+                                                                                                 shape=1,
                                                                                                  radius=220.71532,
                                                                                                  grazing_angle=0.02181,
                                                                                                  error_flag=0,
-                                                                                                 error_file="/home/manuel/Oasys/dabam_profile_140522663056440.dat",
+                                                                                                 error_file="",
+                                                                                                 error_edge_management=0,
                                                                                                  write_profile=0)
 
     if do_plot:
@@ -244,11 +366,25 @@ def M3(input_wavefront):
     return output_wavefront
 
 
-def M3correction(input_wavefront):
+def M3correction(input_wavefront,use_fit=0):
 
-    output_wavefront, target_wavefront, abscissas_on_mirror, height = calculate_output_wavefront_after_corrector1D(
+    tmp, target_wavefront, abscissas_on_mirror, height = calculate_output_wavefront_after_corrector1D(
         input_wavefront, grazing_angle=0.02181, focus_at=2.64, apodization=0, apodization_ratio=6.0,
-        write_correction_profile=0)
+        write_correction_profile=1)
+
+    if use_fit:
+        fit_correction("correction_profile1D.dat", fileout="correction_profile1D_fitted.dat", calculate=False)
+        error_file = "correction_profile1D_fitted.dat"
+    else:
+        error_file = "correction_profile1D.dat"
+
+    print(">>>>>>> use_fit: ",use_fit)
+    a = numpy.loadtxt(error_file)
+
+    output_wavefront, abscissas_on_mirror, height = calculate_output_wavefront_after_reflector1D(input_wavefront,
+                                                shape=0, radius=220.71532, grazing_angle=0.02181,
+                                                error_flag=1, error_file=error_file,error_edge_management=0,
+                                                write_profile=0)
 
     if do_plot:
         plot_wavefront_intensity(output_wavefront,title="M3correction")
@@ -341,12 +477,12 @@ def get_R_grazing(p_foc,q_foc,grazing):
     mm = (1.0 / p_foc + 1.0 / q_foc)
     return 2 / (numpy.sin(grazing)) / mm
 
-def RUN_WOFRY(photon_energy=250,do_optimize_M3=False,error_radius=1e10):
+def RUN_WOFRY(photon_energy=250,do_optimize_M3=False,use_fit=0,number_of_ripples=1):
 
     wf = source(photon_energy=photon_energy)
 
 
-    wf0 = M1(wf, error_radius)
+    wf0 = M1(wf, number_of_ripples)
 
 
     wf1 = propagate_from_M1_to_M3(wf0)
@@ -354,26 +490,28 @@ def RUN_WOFRY(photon_energy=250,do_optimize_M3=False,error_radius=1e10):
     wf2 = M3(wf1)
 
     if do_optimize_M3:
-        wf3 = M3correction(wf2)
+        wf3 = M3correction(wf2,use_fit=use_fit)
     else:
         wf3 = wf2
 
-    magnification_x = 0.01
+    magnification_x = 0.02
 
-    if not do_optimize_M3:
-        if numpy.abs(error_radius) < 5000:
-            magnification_x = 0.1
-
-        if numpy.abs(error_radius) < 200:
-            magnification_x = 1
-    else:
-
-
-        if numpy.abs(error_radius) < 100:
-            magnification_x = 0.005
-
-        if numpy.abs(error_radius) < 45:
-            magnification_x = 0.005 / 5
+    # if not do_optimize_M3:
+    #     if numpy.abs(number_of_ripples) < 5000:
+    #         magnification_x = 0.1
+    #
+    #     if numpy.abs(number_of_ripples) < 200:
+    #         magnification_x = 1
+    # else:
+    #
+    #     if numpy.abs(number_of_ripples) < 100:
+    #         magnification_x = 0.005
+    #
+    #     if numpy.abs(number_of_ripples) < 100:
+    #         magnification_x = 0.001
+    #
+    #     if numpy.abs(number_of_ripples) < 45:
+    #         magnification_x = 0.0001
 
     wf4 = propagate_from_M3_to_sample(wf3, magnification_x=magnification_x)
 
@@ -390,85 +528,99 @@ if __name__ == "__main__":
     do_loop = 1
     do_plot = 0
     do_h5 = 0
-    factor = -1.0  # -1.0
+    factor = 1.0  # -1.0
+    use_fit = 1
+
+
+    if use_fit:
+        is_fit_string = "_fit"
+    else:
+        is_fit_string = ""
 
     if do_h5:
         from srxraylib.util.h5_simple_writer import H5SimpleWriter
-        h = H5SimpleWriter.initialize_file("flexon_ken_memo2.h5",overwrite=True)
+        h = H5SimpleWriter.initialize_file("flexon_ken_memo2_fit.h5",overwrite=True)
 
 
     if do_loop:
 
-        ERROR_RADIUS = numpy.logspace(1,6,100)
-        I0uncorr = numpy.zeros_like(ERROR_RADIUS)
-        I0corr = numpy.zeros_like(ERROR_RADIUS)
-        I0uncorr1500 = numpy.zeros_like(ERROR_RADIUS)
-        I0corr1500 = numpy.zeros_like(ERROR_RADIUS)
+        NUMBER_OF_RIPPLES = numpy.linspace(0,30,31)
+        I0uncorr = numpy.zeros_like(NUMBER_OF_RIPPLES)
+        I0corr = numpy.zeros_like(NUMBER_OF_RIPPLES)
+        I0uncorr1500 = numpy.zeros_like(NUMBER_OF_RIPPLES)
+        I0corr1500 = numpy.zeros_like(NUMBER_OF_RIPPLES)
 
 
         photon_energy1 = 250
         photon_energy2 = 1250
-        for i in range(ERROR_RADIUS.size):
+        for i in range(NUMBER_OF_RIPPLES.size):
 
-            print("iteration %d of %d"%(i+1,ERROR_RADIUS.size))
-            wf2 = RUN_WOFRY(photon_energy=photon_energy1, do_optimize_M3=False, error_radius=factor*ERROR_RADIUS[i])
+            print("iteration %d of %d" % (i + 1, NUMBER_OF_RIPPLES.size))
+            wf2 = RUN_WOFRY(photon_energy=photon_energy1, do_optimize_M3=False, use_fit=use_fit, number_of_ripples=NUMBER_OF_RIPPLES[i])
             Ino = wf2.get_intensity()
             Xno = wf2.get_abscissas()
             I0uncorr[i] = get_wavefront_intensity_I0(wf2)
-            # I0uncorr[i] = get_wavefront_intensity_fwhm(wf2)
-            wf2 = RUN_WOFRY(photon_energy=photon_energy1, do_optimize_M3=True, error_radius=factor*ERROR_RADIUS[i])
+
+            wf2 = RUN_WOFRY(photon_energy=photon_energy1, do_optimize_M3=True, use_fit=use_fit, number_of_ripples=NUMBER_OF_RIPPLES[i])
             Iopt = wf2.get_intensity()
             Xopt = wf2.get_abscissas()
             I0corr[i] = get_wavefront_intensity_I0(wf2)
 
 
-            wf2 = RUN_WOFRY(photon_energy=photon_energy2, do_optimize_M3=True, error_radius=factor*ERROR_RADIUS[i])
-            I0corr1500[i] = get_wavefront_intensity_I0(wf2)
-            wf2 = RUN_WOFRY(photon_energy=photon_energy2, do_optimize_M3=False, error_radius=factor*ERROR_RADIUS[i])
+            wf2 = RUN_WOFRY(photon_energy=photon_energy2, do_optimize_M3=False, use_fit=use_fit, number_of_ripples=NUMBER_OF_RIPPLES[i])
             I0uncorr1500[i] = get_wavefront_intensity_I0(wf2)
 
-            if do_h5:
-                h.create_entry("iteration %f" % (factor * ERROR_RADIUS[i]), nx_default="intensity")
-                h.add_dataset(1e6 * Xopt, Iopt, dataset_name="intensity",
-                              entry_name="iteration %f" % (factor * ERROR_RADIUS[i]),
-                              title_x="X / um", title_y="intensity / a.u.")
+            wf2 = RUN_WOFRY(photon_energy=photon_energy2, do_optimize_M3=True, use_fit=use_fit, number_of_ripples=NUMBER_OF_RIPPLES[i])
+            Iopt1500 = wf2.get_intensity()
+            Xopt1500 = wf2.get_abscissas()
+            I0corr1500[i] = get_wavefront_intensity_I0(wf2)
 
+            if do_h5:
+                    h.create_entry("iteration %f(%s)" % (NUMBER_OF_RIPPLES[i], photon_energy1), nx_default="intensity")
+                    h.add_dataset(1e6 * Xopt, Iopt, dataset_name="intensity",
+                                  entry_name="iteration %f(%s)"% (NUMBER_OF_RIPPLES[i], photon_energy1),
+                                  title_x="X / um", title_y="intensity / a.u.")
+
+                    h.create_entry("iteration %f(%s)" % (NUMBER_OF_RIPPLES[i], photon_energy2), nx_default="intensity")
+                    h.add_dataset(1e6 * Xopt1500, Iopt1500, dataset_name="intensity",
+                                  entry_name="iteration %f(%s)"% (NUMBER_OF_RIPPLES[i], photon_energy2),
+                                  title_x="X / um", title_y="intensity / a.u.")
 
 
         if do_h5:
             h.create_entry("scan results", nx_default="strehl_opt")
-            h.add_dataset(ERROR_RADIUS,I0uncorr/I0uncorr[-1], dataset_name="strehl_no", entry_name="scan results",
+            h.add_dataset(NUMBER_OF_RIPPLES, I0uncorr / I0uncorr[-1], dataset_name="strehl_no", entry_name="scan results",
                           title_x="Radius/m", title_y="Strelh Ratio")
-            h.add_dataset(ERROR_RADIUS,I0corr/I0corr[-1], dataset_name="strehl_opt", entry_name="scan results",
+            h.add_dataset(NUMBER_OF_RIPPLES, I0corr / I0corr[-1], dataset_name="strehl_opt", entry_name="scan results",
                           title_x="Radius/m", title_y="Strelh Ratio")
 
             print("File flexon_ken_memo2.h5 written to disk.")
 
 
-        filename = "flexon_ken_memo2_factor%d.dat"%factor
+        filename = "flexon_ken_memo2_cosine%s.dat"%is_fit_string
         f = open(filename,"w")
         f.write("; radius uncorrected250 corrected250 uncorrected1250 corrected1250 \n")
-        for i in range(ERROR_RADIUS.size):
+        for i in range(NUMBER_OF_RIPPLES.size):
             f.write("%g  %g  %g  %g %g \n"%
-                    (ERROR_RADIUS[i],
-                    I0uncorr[i]/I0uncorr[-1],
-                    I0corr[i]/I0corr[-1],
-                    I0uncorr1500[i] / I0uncorr1500[-1],
-                    I0corr1500[i] / I0corr1500[-1],
+                    (NUMBER_OF_RIPPLES[i],
+                     I0uncorr[i] / I0uncorr[0],
+                     I0corr[i] / I0corr[0],
+                     I0uncorr1500[i] / I0uncorr1500[0],
+                     I0corr1500[i] / I0corr1500[0],
                      ))
         f.close()
         print("File written to disk: %s"%filename)
 
-        plot(ERROR_RADIUS,I0uncorr/I0uncorr[-1],
-             ERROR_RADIUS,I0corr/I0corr[-1],
-             ERROR_RADIUS, I0uncorr1500 / I0uncorr1500[-1],
-             ERROR_RADIUS, I0corr1500 / I0corr1500[-1],
-             xlog=True,
+        plot(NUMBER_OF_RIPPLES, I0uncorr / I0uncorr[0],
+             NUMBER_OF_RIPPLES, I0corr / I0corr[0],
+             NUMBER_OF_RIPPLES, I0uncorr1500 / I0uncorr1500[0],
+             NUMBER_OF_RIPPLES, I0corr1500 / I0corr1500[0],
+             xlog=False,
              legend=["Uncorrected E=%d eV"%photon_energy1,"Corrected E=%d eV"%photon_energy1,"Uncorrected E=%d eV"%photon_energy2,"Corrected E=%d eV"%photon_energy2],
-             xtitle="Radius [m]",ytitle="Strehl I/I0")
+             xtitle="Number of ripples in mirror length", ytitle="Strehl I/I0")
 
     else:
-        wf2 = RUN_WOFRY(photon_energy=250, do_optimize_M3=True, error_radius=-1e3)
+        wf2 = RUN_WOFRY(photon_energy=250, do_optimize_M3=True, number_of_ripples=1)
 
 
 
@@ -476,5 +628,5 @@ if __name__ == "__main__":
         plot_wavefront_intensity(wf2)
         # print("M3 Radius, angle: ",get_R_grazing(13.73+13.599,2.64,1.25*numpy.pi/180),1.25*numpy.pi/180)
 
-        # wf2 = RUN_WOFRY(photon_energy=250,do_plot=False,do_optimize_M3=True,error_radius=1e2)
+        # wf2 = RUN_WOFRY(photon_energy=250,do_plot=False,do_optimize_M3=True,number_of_ripples=1e2)
         # plot_wavefront_intensity(wf2)

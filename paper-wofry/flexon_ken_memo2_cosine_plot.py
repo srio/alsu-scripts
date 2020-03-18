@@ -11,28 +11,34 @@ matplotlib.rcParams.update({'font.size': 20})
 
 # ap = numpy.loadtxt( "flexon_ken_memo2_factor1_fit.dat", skiprows=1)
 
-is_fit = False
-
-if is_fit:
-    is_fit_string = "_fit"
-else:
-    is_fit_string = ""
+# is_fit = True
+#
+# if is_fit:
+#     is_fit_string = "_fit"
+# else:
+#     is_fit_string = ""
 
 photon_energy1 = 250
 photon_energy2 = 1250
 
-for factor in ["-1","1"]:
-    am = numpy.loadtxt("flexon_ken_memo2_factor%s%s.dat"%(factor,is_fit_string), skiprows=1)
+for is_fit_string in ["_fit",""]:
+    am = numpy.loadtxt("flexon_ken_memo2_cosine%s.dat"%(is_fit_string), skiprows=1)
     fm =    plot(am[:,0], am[:,1],
                  am[:,0], am[:,2],
                  am[:,0], am[:,3],
                  am[:,0], am[:,4],
-                 xlog=True,figsize=(12,8),
+                 xlog=False,figsize=(12,8),
                  legend=["Uncorrected E=%d eV"%photon_energy1,"Corrected E=%d eV"%photon_energy1,"Uncorrected E=%d eV"%photon_energy2,"Corrected E=%d eV"%photon_energy2],
-                 xtitle="Radius [m]",ytitle="Strehl I/I0",xrange=[50,1e6])
+                 xtitle="Number of ripples in mirror length",ytitle="Strehl I/I0",
+                 show=0)
 
-    filename = "flexon_ken_memo2_factor%s%s.png"%(factor,is_fit_string)
+    matplotlib.pylab.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.2)
+    # matplotlib.pylab.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+
+    filename = "flexon_ken_memo2_cosine%s.png"%(is_fit_string)
     fm[0].savefig(filename)
+
+    matplotlib.pylab.show()
     print("File %s written to disk"%filename)
 
 

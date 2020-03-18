@@ -256,6 +256,7 @@ def source(photon_energy=250,number_of_points=3001*100,x_max=0.00147*12):
 def M1(input_wavefront,radius=100000.0):
 
     output_wavefront, abscissas_on_mirror, height = calculate_output_wavefront_after_reflector1D(input_wavefront,
+                                                                                                 shape=1,
                                                                                                  radius=radius,
                                                                                                  grazing_angle=0.0218,
                                                                                                  error_flag=0,
@@ -336,6 +337,7 @@ def M3(input_wavefront):
     #
 
     output_wavefront, abscissas_on_mirror, height = calculate_output_wavefront_after_reflector1D(input_wavefront,
+                                                                                                 shape=1,
                                                                                                  radius=220.71532,
                                                                                                  grazing_angle=0.02181,
                                                                                                  error_flag=0,
@@ -487,12 +489,14 @@ def RUN_WOFRY(photon_energy=250,do_optimize_M3=False,error_radius=1e10):
             magnification_x = 1
     else:
 
-
         if numpy.abs(error_radius) < 100:
             magnification_x = 0.005
 
+        if numpy.abs(error_radius) < 100:
+            magnification_x = 0.001
+
         if numpy.abs(error_radius) < 45:
-            magnification_x = 0.005 / 5
+            magnification_x = 0.0001
 
     wf4 = propagate_from_M3_to_sample(wf3, magnification_x=magnification_x)
 
@@ -508,7 +512,8 @@ if __name__ == "__main__":
 
     do_loop = 1
     do_plot = 0
-    do_h5 = 1
+    do_h5 = 0
+    factor = 1.0  # -1.0
 
     if do_h5:
         from srxraylib.util.h5_simple_writer import H5SimpleWriter
@@ -523,7 +528,7 @@ if __name__ == "__main__":
         I0uncorr1500 = numpy.zeros_like(ERROR_RADIUS)
         I0corr1500 = numpy.zeros_like(ERROR_RADIUS)
 
-        factor = 1.0 # -1.0
+
         photon_energy1 = 250
         photon_energy2 = 1250
         for i in range(ERROR_RADIUS.size):
@@ -570,7 +575,7 @@ if __name__ == "__main__":
             print("File flexon_ken_memo2.h5 written to disk.")
 
 
-        filename = "flexon_ken_memo2_fit_factor%d.dat"%factor
+        filename = "flexon_ken_memo2_factor%d_fit.dat"%factor
         f = open(filename,"w")
         f.write("; radius uncorrected250 corrected250 uncorrected1250 corrected1250 \n")
         for i in range(ERROR_RADIUS.size):
