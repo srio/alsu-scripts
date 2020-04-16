@@ -1,0 +1,32 @@
+File: disp100000_shadow.dat 
+Optimum at defocus: 0.039474 m (H) x 0.236842 m (V)
+Optimum FWHM: 5.960089 m (H) x 10.351829 m (V)
+
+File: disp10000_shadow.dat 
+Optimum at defocus: 0.039474 m (H) x 0.302632 m (V)
+Optimum FWHM: 5.881378 m (H) x 11.291050 m (V)
+
+File: disp3000_shadow.dat 
+Optimum at defocus: 0.039474 m (H) x -0.026316 m (V)
+Optimum FWHM: 5.380529 m (H) x 6.347989 m (V)
+
+File: disp2500_shadow.dat 
+Optimum at defocus: 0.039474 m (H) x -0.026316 m (V)
+Optimum FWHM: 6.315882 m (H) x 6.289530 m (V)
+
+File: disp2000_shadow.dat 
+Optimum at defocus: -0.026316 m (H) x 0.039474 m (V)
+Optimum FWHM: 5.411374 m (H) x 5.625295 m (V)
+
+File: disp1500_shadow.dat 
+Optimum at defocus: -0.092105 m (H) x -0.289474 m (V)
+Optimum FWHM: 5.735069 m (H) x 10.152930 m (V)
+
+File: disp1250_shadow.dat 
+Optimum at defocus: -0.157895 m (H) x -0.421053 m (V)
+Optimum FWHM: 4.930907 m (H) x 7.775480 m (V)
+
+File: disp1000_shadow.dat 
+Optimum at defocus: -0.289474 m (H) x -0.684211 m (V)
+Optimum FWHM: 3.607012 m (H) x 10.178827 m (V)
+

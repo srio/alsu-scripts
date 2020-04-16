@@ -50,7 +50,7 @@ def ken_diaboloid_point_to_segment(
         theta = 4.5e-3,
         x = numpy.linspace(-0.01,0.01, 101),
         y= numpy.linspace(-0.1, 0.1, 1001),
-        detrend=False,
+        detrend=0,
         filename_shadow="",
         filename_h5=""):
 
@@ -68,10 +68,22 @@ def ken_diaboloid_point_to_segment(
     Z += z0
     print(Z.shape,Z.min(),Z.max())
 
-    if detrend:
-        zfit = -theta * y
-        for i in range(Z.shape[0]):
-            Z[i,:] = Z[i,:] - zfit
+    if detrend == 0:
+        zfit = 0
+    elif detrend == 1:
+        zfit = -theta * y # -numpy.tan(theta) * y
+    elif detrend == 2:
+        zcentral = Z[Z.shape[0]//2,:]
+        zcoeff = numpy.polyfit(y[(y.size//2-10):(y.size//2+10)],
+                                zcentral[(y.size//2-10):(y.size//2+10)],1)
+        zfit = zcoeff[1] + y * zcoeff[0]
+        # print(zcoeff)
+        # from srxraylib.plot.gol import plot
+        # plot(y,zcentral,y,zfit)
+
+
+    for i in range(Z.shape[0]):
+        Z[i,:] = Z[i,:] - zfit
 
     # write_surface_file(Z.T, x, y, "C:\\Users\\manuel\\Oasys\\ken_method.h5", overwrite=True)
     if filename_shadow != "":
@@ -90,7 +102,7 @@ def ken_diaboloid_segment_to_point(
         theta = 4.5e-3,
         x = numpy.linspace(-0.01,0.01, 101),
         y= numpy.linspace(-0.1, 0.1, 1001),
-        detrend=False,
+        detrend=0,
         filename_shadow="",
         filename_h5=""):
 
@@ -108,17 +120,21 @@ def ken_diaboloid_segment_to_point(
 
     print(Z.shape,Z.min(),Z.max())
 
-    if detrend:
-        # zcentral = Z[Z.shape[0]//2,:]
-        # zcoeff = numpy.polyfit(y[(y.size//2-10):(y.size//2+10)],
-        #                         zcentral[(y.size//2-10):(y.size//2+10)],1)
-        # zfit = zcoeff[1] + y * zcoeff[0]
+    if detrend == 0:
+        zfit = 0
+    elif detrend == 1:
+        zfit = theta * y # numpy.tan(theta) * y
+    elif detrend == 2:
+        zcentral = Z[Z.shape[0]//2,:]
+        zcoeff = numpy.polyfit(y[(y.size//2-10):(y.size//2+10)],
+                                zcentral[(y.size//2-10):(y.size//2+10)],1)
+        zfit = zcoeff[1] + y * zcoeff[0]
         # print(zcoeff)
         # from srxraylib.plot.gol import plot
         # plot(y,zcentral,y,zfit)
-        zfit = theta * y
-        for i in range(Z.shape[0]):
-            Z[i,:] = Z[i,:] - zfit
+
+    for i in range(Z.shape[0]):
+        Z[i,:] = Z[i,:] - zfit
         
     # write_surface_file(Z.T, x, y, "C:\\Users\\manuel\\Oasys\\ken_method.h5", overwrite=True)
     if filename_shadow != "":
@@ -131,17 +147,68 @@ def ken_diaboloid_segment_to_point(
 
     return Z, X, Y
 
+def valeriy_diaboloid_point_to_segment(
+        p = 29.3,
+        q = 19.53,
+        theta = 4.5e-3,
+        x = numpy.linspace(-0.01,0.01, 101),
+        y= numpy.linspace(-0.1, 0.1, 1001),
+        detrend=0,
+        filename_shadow="",
+        filename_h5=""):
 
+    X = numpy.outer(x,numpy.ones_like(y))
+    Y = numpy.outer(numpy.ones_like(x),y)
+
+    c = numpy.cos(2 * theta)
+    s = numpy.sin(2 * theta)
+
+
+    Z = p * s - numpy.sqrt( \
+        4 * p**2 * s**4 - \
+        2 * (p * c + q) * (Y + p * c) + \
+        2 * (p + q) * (p * c + q - numpy.sqrt(X**2 + (q - Y)**2)) \
+        )
+
+
+    print(Z.shape,Z.min(),Z.max())
+
+    if detrend == 0:
+        zfit = 0
+    elif detrend == 1:
+        zfit = -theta * y # -numpy.tan(theta) * y
+    elif detrend == 2:
+        zcentral = Z[Z.shape[0]//2,:]
+        zcoeff = numpy.polyfit(y[(y.size//2-10):(y.size//2+10)],
+                                zcentral[(y.size//2-10):(y.size//2+10)],1)
+        zfit = zcoeff[1] + y * zcoeff[0]
+        # print(zcoeff)
+        # from srxraylib.plot.gol import plot
+        # plot(y,zcentral,y,zfit)
+
+    for i in range(Z.shape[0]):
+        Z[i,:] = Z[i,:] - zfit
+
+    # write_surface_file(Z.T, x, y, "C:\\Users\\manuel\\Oasys\\ken_method.h5", overwrite=True)
+    if filename_shadow != "":
+        write_shadow_surface(Z, x, y, filename=filename_shadow)
+        print("SHADOW file %s written to disk."%filename_shadow)
+
+    if filename_h5 != "":
+        write_surface_file(Z.T, x, y, filename_h5, overwrite=True)
+        print("HDF5 file %s written to disk."%filename_h5)
+
+    return Z, X, Y
 
 if __name__ == "__main__":
 
-    path = "/home/manuel/Oasys/"
-    # path = "c:\\Users\\manuel\\Oasys/"
+    path = "" #"/home/manuel/Oasys/"
+    path = "c:\\Users\\manuel\\Oasys/"
 
     system = 'wayne'
-    # system = 'point_to_segment'
+    system = 'point_to_segment'
     system = 'bl12.2.2'
-    system = 'bl12.2.2_high_demag'
+    # system = 'bl12.2.2_high_demag'
 
     if system == 'point_to_segment':
         #
@@ -154,14 +221,22 @@ if __name__ == "__main__":
         x = numpy.linspace(-0.01,0.01, 101)
 
         Z, X, Y = ken_diaboloid_point_to_segment(p,q,theta,x,y,
-                                                 detrend=True,
+                                                 detrend=2,
                                                  filename_shadow='',
                                                  filename_h5=path+"diaboloid_ken_point_to_segment.h5")
 
+        from srxraylib.plot.gol import plot_image, plot, plot_surface
+        plot_image(Z,1e3*x,1e3*y,aspect='auto',title=path+"diaboloid_ken_point_to_segment.h5")
 
+        Z, X, Y = valeriy_diaboloid_point_to_segment(p,q,theta,x,y,
+                                                 detrend=2,
+                                                 filename_shadow='',
+                                                 filename_h5=path+"diaboloid_valeriy_point_to_segment.h5")
 
-        from srxraylib.plot.gol import plot_image, plot
-        plot_image(Z,1e3*x,1e3*y,aspect='auto')
+        from srxraylib.plot.gol import plot_image, plot, plot_surface
+        plot_image(Z,1e3*x,1e3*y,aspect='auto',title=path+"diaboloid_valeriy_point_to_segment.h5")
+        # plot_surface(Z,1e3*x,1e3*y)
+
 
     elif system == 'wayne':
 
@@ -180,12 +255,12 @@ if __name__ == "__main__":
         x = numpy.linspace(-0.015,0.015, 101)
 
         Z, X, Y = ken_diaboloid_segment_to_point(source_diaboloid,diaboloid_image,theta,x,y,
-                                                 detrend=True,
+                                                 detrend=2,
                                                  filename_shadow='',
                                                  filename_h5=path+"diaboloid_mckinney_ken_method.h5")
 
         # Z, X, Y = ken_diaboloid_point_to_segment(diaboloid_image,source_diaboloid,theta,x,y,
-        #                                          detrend=True,
+        #                                          detrend=2,
         #                                          filename_shadow='',
         #                                          filename_h5=path_windows+"diaboloid_mckinney_ken_method.h5")
 
@@ -206,7 +281,7 @@ if __name__ == "__main__":
         x = numpy.linspace(-0.015,0.015, 101)
 
         Z, X, Y = ken_diaboloid_segment_to_point(source_diaboloid,diaboloid_image,theta,x,y,
-                                                 detrend=True,
+                                                 detrend=2,
                                                  filename_shadow='',
                                                  filename_h5=path+"diaboloid_bl1222_ken_method.h5")
 
@@ -227,6 +302,6 @@ if __name__ == "__main__":
         x = numpy.linspace(-0.01, 0.01, 101)
 
         Z, X, Y = ken_diaboloid_segment_to_point(source_diaboloid, diaboloid_image, theta, x, y,
-                                                 detrend=True,
+                                                 detrend=2,
                                                  filename_shadow='',
                                                  filename_h5=path + "diaboloid_bl1222_high_demag_ken_method.h5")
