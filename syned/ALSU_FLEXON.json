@@ -16,9 +16,9 @@
     },
     "magnetic_structure": {
         "CLASS_NAME": "Undulator",
-        "K_vertical": 2.144,
+        "K_vertical": 3.13,
         "K_horizontal": 0.0,
-        "period_length": 0.0288,
-        "number_of_periods": 138.0
+        "period_length": 0.032,
+        "number_of_periods": 125.0
     }
 }
