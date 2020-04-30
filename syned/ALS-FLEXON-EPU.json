@@ -1,6 +1,6 @@
 {
     "CLASS_NAME": "LightSource",
-    "name": "MAESTRO EPU",
+    "name": "FLEXON EPU",
     "electron_beam": {
         "CLASS_NAME": "ElectronBeam",
         "energy_in_GeV": 2.0,
@@ -16,9 +16,9 @@
     },
     "magnetic_structure": {
         "CLASS_NAME": "Undulator",
-        "K_vertical": 4.011,
+        "K_vertical": 3.47,
         "K_horizontal": 0.0,
-        "period_length": 0.07,
-        "number_of_periods": 26.0
+        "period_length": 0.036,
+        "number_of_periods": 111.0
     }
 }
