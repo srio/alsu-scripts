@@ -1,32 +1,65 @@
 File: disp100000_shadow.dat 
-Optimum at defocus: 0.039474 m (H) x 0.236842 m (V)
-Optimum FWHM: 5.960089 m (H) x 10.351829 m (V)
+Optimum FWHM: 5.382433 um (H) x 5.108561 um (V)
+Uncorrected FWHM: 10.055402 um (H) x 24.312391 um (V)
+Optimum Q-defocus: 0.039474 m (M3) ; 0.236842 m (M4)
+Optimum Q: 3.881474 m (M3) ; 3.579842 m (M4)
+Optimum FWHM (rerun): 5.382433 um (H) ; 5.108561 um (V)
+Elipse radii (uncorrected) M4: 838.218346 m ; M5: 743.173765 m
+Ellipse radii (corrected) M4: 882.960670 m ; M5: 750.966741 m
 
 File: disp10000_shadow.dat 
-Optimum at defocus: 0.039474 m (H) x 0.302632 m (V)
-Optimum FWHM: 5.881378 m (H) x 11.291050 m (V)
+Optimum FWHM: 5.243515 um (H) x 5.608910 um (V)
+Uncorrected FWHM: 9.738425 um (H) x 24.758853 um (V)
+Optimum Q-defocus: 0.039474 m (M3) ; 0.236842 m (M4)
+Optimum Q: 3.881474 m (M3) ; 3.579842 m (M4)
+Optimum FWHM (rerun): 5.243515 um (H) ; 5.608910 um (V)
+Elipse radii (uncorrected) M4: 838.218346 m ; M5: 743.173765 m
+Ellipse radii (corrected) M4: 882.960670 m ; M5: 750.966741 m
 
 File: disp3000_shadow.dat 
-Optimum at defocus: 0.039474 m (H) x -0.026316 m (V)
-Optimum FWHM: 5.380529 m (H) x 6.347989 m (V)
+Optimum FWHM: 4.152295 um (H) x 5.712275 um (V)
+Uncorrected FWHM: 5.991679 um (H) x 12.579020 um (V)
+Optimum Q-defocus: 0.039474 m (M3) ; 0.105263 m (M4)
+Optimum Q: 3.881474 m (M3) ; 3.448263 m (M4)
+Optimum FWHM (rerun): 4.152295 um (H) ; 5.712275 um (V)
+Elipse radii (uncorrected) M4: 838.218346 m ; M5: 743.173765 m
+Ellipse radii (corrected) M4: 858.190230 m ; M5: 750.966741 m
 
+##########################################################################
 File: disp2500_shadow.dat 
-Optimum at defocus: 0.039474 m (H) x -0.026316 m (V)
-Optimum FWHM: 6.315882 m (H) x 6.289530 m (V)
+Optimum FWHM: 5.133533 um (H) x 5.940745 um (V)
+Uncorrected FWHM: 5.211034 um (H) x 8.227680 um (V)
+Optimum Q-defocus: 0.039474 m (M3) ; 0.039474 m (M4)
+Optimum Q: 3.881474 m (M3) ; 3.382474 m (M4)
+Optimum FWHM (rerun): 5.133533 um (H) ; 5.940745 um (V)
+Elipse radii (uncorrected) M4: 838.218346 m ; M5: 743.173765 m
+Ellipse radii (corrected) M4: 845.724110 m ; M5: 750.966741 m
+###########################################################################
 
 File: disp2000_shadow.dat 
-Optimum at defocus: -0.026316 m (H) x 0.039474 m (V)
-Optimum FWHM: 5.411374 m (H) x 5.625295 m (V)
+Optimum FWHM: 4.878362 um (H) x 4.626001 um (V)
+Uncorrected FWHM: 4.213453 um (H) x 6.146887 um (V)
+Optimum Q-defocus: -0.026316 m (M3) ; -0.026316 m (M4)
+Optimum Q: 3.815684 m (M3) ; 3.316684 m (M4)
+Optimum FWHM (rerun): 4.878362 um (H) ; 4.626001 um (V)
+Elipse radii (uncorrected) M4: 838.218346 m ; M5: 743.173765 m
+Ellipse radii (corrected) M4: 833.203584 m ; M5: 737.967112 m
 
 File: disp1500_shadow.dat 
-Optimum at defocus: -0.092105 m (H) x -0.289474 m (V)
-Optimum FWHM: 5.735069 m (H) x 10.152930 m (V)
+Optimum FWHM: 4.067244 um (H) x 5.598748 um (V)
+Uncorrected FWHM: 13.347779 um (H) x 39.761317 um (V)
+Optimum Q-defocus: -0.092105 m (M3) ; -0.223684 m (M4)
+Optimum Q: 3.749895 m (M3) ; 3.119316 m (M4)
+Optimum FWHM (rerun): 4.067244 um (H) ; 5.598748 um (V)
+Elipse radii (uncorrected) M4: 838.218346 m ; M5: 743.173765 m
+Ellipse radii (corrected) M4: 795.311997 m ; M5: 724.910629 m
 
 File: disp1250_shadow.dat 
-Optimum at defocus: -0.157895 m (H) x -0.421053 m (V)
-Optimum FWHM: 4.930907 m (H) x 7.775480 m (V)
-
-File: disp1000_shadow.dat 
-Optimum at defocus: -0.289474 m (H) x -0.684211 m (V)
-Optimum FWHM: 3.607012 m (H) x 10.178827 m (V)
+Optimum FWHM: 4.280233 um (H) x 4.094217 um (V)
+Uncorrected FWHM: 25.945885 um (H) x 78.072015 um (V)
+Optimum Q-defocus: -0.157895 m (M3) ; -0.421053 m (M4)
+Optimum Q: 3.684105 m (M3) ; 2.921947 m (M4)
+Optimum FWHM (rerun): 4.280233 um (H) ; 4.094217 um (V)
+Elipse radii (uncorrected) M4: 838.218346 m ; M5: 743.173765 m
+Ellipse radii (corrected) M4: 756.917731 m ; M5: 711.796917 m
 

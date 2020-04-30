@@ -203,14 +203,14 @@ def run_shadow(FILE_RIP="",
 
 if __name__ == "__main__":
 
+    do_plot = 0
+
     SIMAG4 = 3.842
     SSOUR4 = 26.334
     SIMAG5 = 3.343
     SSOUR5 = 26.834
 
     FILE_DIR = 'C:/Users/Manuel/Oasys/TENDER DCM Performance/'
-    FILE_RIP = 'disp1000_shadow.dat'
-
     FILE_RIP_LIST = []
     FILE_RIP_LIST.append('disp100000_shadow.dat')
     FILE_RIP_LIST.append('disp10000_shadow.dat')
@@ -230,7 +230,30 @@ if __name__ == "__main__":
 
     f = open('correction_crystal_deformation.txt','w')
 
+
+    #
+    # loop
+    #
     for FILE_RIP in FILE_RIP_LIST:
+        #
+        # uncorrected
+        #
+        beam = run_shadow(FILE_RIP=(FILE_DIR + FILE_RIP).encode(),
+                          SIMAG4=3.842,
+                          SSOUR4=26.334,
+                          SIMAG5=3.343,
+                          SSOUR5=26.834,
+                          )
+
+        tkt = beam.histo2(3, 1, nbins=100, nolost=1, ref=23, )
+        FWHM0_F = 1e6 * tkt["fwhm_h"]
+        FWHM0_V = 1e6 * tkt["fwhm_v"]
+        if do_plot:
+            Shadow.ShadowTools.plotxy(beam, 3, 1, nbins=100, nolost=1, ref=23, title="Real space UnCorrected")
+
+        #
+        #
+        #
         out = numpy.zeros((nruns, 4))
         for i in range(nruns):
             beam = run_shadow(FILE_RIP=(FILE_DIR+FILE_RIP).encode(),
@@ -254,15 +277,53 @@ if __name__ == "__main__":
 
             # Shadow.ShadowTools.plotxy(beam, 3, 1, nbins=101, nolost=1, title="Real space")
 
-        # plot(out[:, 0], out[:, 2], out[:, 0], out[:, 3])
+        if do_plot:
+            plot(out[:, 0], out[:, 2], out[:, 0], out[:, 3], title=FILE_RIP)
 
         i_opt = numpy.argmin(out[:, 2])
         j_opt = numpy.argmin(out[:, 3])
 
-        f.write("File: %s \n" % (FILE_RIP))
-        f.write("Optimum at defocus: %f m (H) x %f m (V)\n" % (out[i_opt, 0], out[j_opt, 0]))
-        f.write("Optimum FWHM: %f m (H) x %f m (V)\n\n" % (out[i_opt, 2], out[j_opt, 3]))
+        #
+        # rerun optimim
+        #
+        beam = run_shadow(FILE_RIP=(FILE_DIR + FILE_RIP).encode(),
+                          SIMAG4=3.842 + out[j_opt, 0], #<<<<<<
+                          SSOUR4=26.334 ,
+                          SIMAG5=3.343 + out[i_opt, 0], #<<<<<<
+                          SSOUR5=26.834 ,
+                          )
 
+        tkt = beam.histo2(3, 1, nbins=100, nolost=1, ref=23, )
+        FWHM1_F = 1e6 * tkt["fwhm_h"]
+        FWHM1_V = 1e6 * tkt["fwhm_v"]
+
+        if do_plot:
+            Shadow.ShadowTools.plotxy(beam, 3, 1, nbins=100, nolost=1, ref=23, title="Real space "+ FILE_RIP)
+
+        f.write("File: %s \n" % (FILE_RIP))
+        f.write("Optimum FWHM: %f um (H) x %f um (V)\n" % (out[i_opt, 2], out[j_opt, 3]))
+        f.write("Uncorrected FWHM: %f um (H) x %f um (V)\n" % (FWHM0_F, FWHM0_V))
+        f.write("Optimum Q-defocus: %f m (M3) ; %f m (M4)\n" % (out[i_opt, 0], out[j_opt, 0]))
+        f.write("Optimum Q: %f m (M3) ; %f m (M4)\n" % (out[i_opt, 0] + 3.842, out[j_opt, 0] + 3.343))
+        f.write("Optimum FWHM (rerun): %f um (H) ; %f um (V)\n" % (FWHM1_F, FWHM1_V))
+
+        SIMAG4_ini = 3.842
+        SIMAG5_ini = 3.343
+        SIMAG4 = 3.842 + out[j_opt, 0]
+        SSOUR4 = 26.334
+        SIMAG5 = 3.343 + out[i_opt, 0]
+        SSOUR5 = 26.834
+        angle = (90 - 89.5416337639) * numpy.pi / 180
+        f.write("Elipse radii (uncorrected) M4: %f m ; M5: %f m\n" %
+            (2 / numpy.sin(angle) / (1 / SIMAG4_ini + 1 / SSOUR4),
+            2 / numpy.sin(angle) / (1 / SIMAG5_ini + 1 / SSOUR5)))
+        f.write("Ellipse radii (corrected) M4: %f m ; M5: %f m\n\n" %
+              (2 / numpy.sin(angle) / (1 / SIMAG4 + 1 / SSOUR4),
+              2 / numpy.sin(angle) / (1 / SIMAG5 + 1 / SSOUR5)))
 
     f.close()
     print("File correction_crystal_deformation.txt written to disk.")
+
+
+
+
