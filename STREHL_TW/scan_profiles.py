@@ -3,7 +3,7 @@ from srxraylib.plot.gol import plot, plot_image, set_qt
 from srxraylib.metrology.dabam import dabam
 import h5py
 
-from run_wofry import run_beamline
+from run_wofry import run_beamline, run_beamline_2
 
 def extract_profile(filename, index, filename_out="", renormalize_to_heights_sd=None):
     file = h5py.File(filename, 'r')
@@ -25,8 +25,8 @@ def extract_profile(filename, index, filename_out="", renormalize_to_heights_sd=
         print("Filee written to disk: %s" % filename_out)
     return x0, y0, image_x[index]
 
-def fit_beta():
-    dm = dabam.initialize_from_external_data("tmp.dat",
+def fit_beta(filename="tmp.dat"):
+    dm = dabam.initialize_from_external_data(filename,
                                              column_index_abscissas=0,
                                              column_index_ordinates=1,
                                              skiprows=0,
@@ -66,15 +66,32 @@ if __name__ == "__main__":
 
     for i in range(rms.size):
 
-        x, y, beta = extract_profile("set1_profiles.h5", profile_index, filename_out="tmp.dat",
-                                     renormalize_to_heights_sd=rms[i] * 1e-9)
+        # filename_out = "tmp.dat"
+        # x, y, beta = extract_profile("set1_profiles.h5", profile_index, filename_out=filename_out,
+        #                              renormalize_to_heights_sd=rms[i] * 1e-9)
+
+
+        filename_out = "C:/Users/Manuel/OASYS1.2/alsu-scripts/STREHL_TW/fractalprofile.dat"
+        a = numpy.loadtxt(filename_out)
+        x = a[:, 0]
+        y = a[:, 1]
+        print(">>>>>>>>>", i, y.std(), rms[i] * 1e-9)
+        y = y / y.std() * rms[i] * 1e-9
+        # plot(x,y)
+        beta = 1.0
+        f = open("tmp.dat", 'w')
+        for ii in range(y.size):
+            f.write("%g  %g\n" % (x[ii], y[ii]))
+        f.close()
+        print("File written to disk: tmp.dat")
+
 
         wf = run_beamline(error_flag=1,error_file="tmp.dat")
-
-
+        wf2 = run_beamline_2(error_flag=1, error_file="tmp.dat")
 
         out[0, i] = rms[i]
         out[1, i] = wf.get_intensity().max()
+        out[2, i] = wf2.get_intensity().max()
 
         if rms.size == 1:
             plot(1e6 * wf.get_abscissas(), wf.get_intensity())
@@ -84,10 +101,17 @@ if __name__ == "__main__":
     delta_phi = 2 * rms * 1e-9 * numpy.sin(1.25 * numpy.pi / 180)
     sr2 = numpy.exp(-(2 * numpy.pi / wf.get_wavelength() * delta_phi) ** 2)
 
-    dm, betafit = fit_beta()
+    dm, betafit = fit_beta(filename_out)
+
+
     plot(out[0,:], out[1,:] / out[1,0] ,
+         out[0, :], out[2, :] / out[2, 0],
          rms, sr2,
-         legend=["numeric","analytical"],
+         legend=["numeric (on-axis propagator)","numeric (grazing-propagator)","analytical"],
          title="Beta: %4.2f fit: %4.2f" % (beta, betafit),
          xtitle="Height Error rms [nm]", ytitle="Strehl Ratio",
-         yrange=[0,1.1])
+         yrange=[0,1.1], show=0)
+    import matplotlib
+    matplotlib.pyplot.grid()
+    matplotlib.pyplot.show()
+    print(out)
