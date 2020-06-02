@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<scheme description="" title="Tony (Strehl vs Beta)" version="2.0" working_directory="C:/Users/Manuel/Oasys" workspace_units="0">
+	<nodes>
+		<node id="0" name="Undulator Gaussian 1D" position="(88.0, 142.0)" project_name="OASYS1-ALS-ShadowOui" qualified_name="orangecontrib.wofry.als.widgets.extensions.ow_undulator_gaussian_1D.OWGaussianUndulator1D" title="Undulator Gaussian 1D" version="" />
+		<node id="1" name="Ideal Reflector 1D" position="(419.0, 145.0)" project_name="OASYS1-ALS-ShadowOui" qualified_name="orangecontrib.wofry.als.widgets.extensions.ow_reflector_1D.OWReflector1D" title="Ideal Reflector 1D" version="" />
+		<node id="2" name="Screen 1D" position="(256.0, 140.0)" project_name="OASYS1-WOFRY" qualified_name="orangecontrib.wofry.widgets.beamline_elements.ow_screen_1d.OWWOScreen1D" title="Screen 1D" version="" />
+		<node id="3" name="Screen 1D" position="(601.0, 142.0)" project_name="OASYS1-WOFRY" qualified_name="orangecontrib.wofry.widgets.beamline_elements.ow_screen_1d.OWWOScreen1D" title="Screen 1D (1)" version="" />
+		<node id="4" name="Python Script" position="(561.0, 435.0)" project_name="OASYS1" qualified_name="oasys.widgets.tools.ow_python_script.OWPythonScript" title="Python Script" version="" />
+		<node id="5" name="Height Profile Simulator" position="(280.0, 281.0)" project_name="OASYS1-SYNED" qualified_name="orangecontrib.syned.widgets.tools.ow_height_profile_simulator.OWHeightProfileSimulator" title="Height Profile Simulator" version="" />
+		<node id="6" name="DABAM Prepare Profile" position="(442.0, 331.0)" project_name="OASYS1-SYNED" qualified_name="orangecontrib.syned.widgets.tools.pre_dabam.OWpre_dabam" title="DABAM Prepare Profile" version="" />
+		<node id="7" name="DABAM Height Profile" position="(349.0, 418.0)" project_name="OASYS1-SYNED" qualified_name="orangecontrib.syned.widgets.tools.ow_dabam_height_profile.OWdabam_height_profile" title="DABAM Height Profile" version="" />
+		<node id="8" name="DABAM Prepare Profile" position="(165.0, 477.0)" project_name="OASYS1-SYNED" qualified_name="orangecontrib.syned.widgets.tools.pre_dabam.OWpre_dabam" title="DABAM Prepare Profile (1)" version="" />
+		<node id="9" name="Generic Wavefront 1D" position="(93.0, 267.0)" project_name="OASYS1-WOFRY" qualified_name="orangecontrib.wofry.widgets.wavefront_propagation.ow_generic_wavefront_1D.OWGenericWavefront1D" title="Generic Wavefront 1D" version="" />
+	</nodes>
+	<links>
+		<link enabled="true" id="0" sink_channel="WofryData" sink_node_id="3" source_channel="WofryData" source_node_id="1" />
+		<link enabled="true" id="1" sink_channel="DABAM 1D Profile" sink_node_id="6" source_channel="DABAM 1D Profile" source_node_id="5" />
+		<link enabled="true" id="2" sink_channel="WofryData" sink_node_id="1" source_channel="WofryData" source_node_id="2" />
+		<link enabled="true" id="3" sink_channel="DABAM 1D Profile" sink_node_id="1" source_channel="DABAM 1D Profile" source_node_id="8" />
+		<link enabled="true" id="4" sink_channel="WofryData" sink_node_id="2" source_channel="WofryData" source_node_id="9" />
+	</links>
+	<annotations />
+	<thumbnail />
+	<node_properties>
+		<properties format="literal" node_id="6">{'CALC_HEIGHT_RMS': '', 'CALC_HEIGHT_RMS_FACTOR': '', 'CALC_SLOPE_RMS': '', 'CALC_SLOPE_RMS_FACTOR': '', 'COATING': '', 'ENVIRONMENT': 0, 'FACILITY': '', 'FUNCTION': 0, 'INSTRUMENT': '', 'LENGTH': '', 'LENGTH_OPTICAL': '', 'POLISHING': '', 'SCAN_DATE': '', 'SUBSTRATE': '', 'SURFACE_SHAPE': 0, 'THICK': '', 'USER_ADDED_BY': '', 'USER_EXAMPLE': '', 'USER_REFERENCE': '', 'WIDTH': '', 'YEAR_FABRICATION': '', 'column_index_abscissas': 0, 'column_index_ordinates': 1, 'detrending_option': 0, 'heigth_profile_file_name': 'dabam-XXX', 'initialize_text': '', 'raw_actions': 0, 'savedWidgetGeometry': None, 'skiprows': 0, 'to_SI_abscissas': 0.001, 'to_SI_ordinates': 1.0, 'useHeightsOrSlopes': 1}</properties>
+		<properties format="literal" node_id="7">{'center_x': 1, 'center_y': 1, 'conversion_factor_x_x': 0.001, 'conversion_factor_x_y': 1e-06, 'correlation_length_x': 0.3, 'dabam_profile_index': 1, 'delimiter_x': 0, 'dimension_x': 0.1, 'dimension_y_from': 0.0, 'dimension_y_to': 2.0, 'entry_number': 1, 'error_type_x': 0, 'error_type_y': 0, 'filler_value_x': 0.0, 'filler_value_y': 0.0, 'heigth_profile_1D_file_name_x': 'mirror_1D_x.dat', 'heigth_profile_file_name': 'mirror.hdf5', 'kind_of_profile_x': 3, 'modify_x': 0, 'modify_y': 0, 'montecarlo_seed_x': 8787, 'new_length_x': 0.201, 'new_length_y': 0.2, 'power_law_exponent_beta_x': 3.0, 'renormalize_x': 0, 'renormalize_y': 1, 'rms_x': 0.1, 'rms_y': 0.9, 'savedWidgetGeometry': None, 'server_address': 'http://ftp.esrf.eu/pub/scisoft/dabam/data/', 'shape': 0, 'slope_error_from': 0.0, 'slope_error_to': 1.5, 'step_x': 0.01, 'use_undetrended': 0}</properties>
+	</node_properties>
+</scheme>

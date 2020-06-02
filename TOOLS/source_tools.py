@@ -19,8 +19,10 @@ def get_sigmas_ALSU(photon_energy,undulator_length):
 
 
 if __name__ == "__main__":
-    energy = 806.0
-    L = 2.1
+    import scipy.constants as codata
+
+    energy = 5 * 230.888 # 806.0
+    L = 137 * 0.0288 # 2.1
     sr, srp = get_sigmas_radiation(energy, L)
     print("Radiation Sizes L=%f m at E=%f eV: \nSr=%5.3f um \nSrp=%5.3f urad: " % (L, energy, 1e6 * sr, 1e6 * srp))
 
@@ -28,3 +30,7 @@ if __name__ == "__main__":
     Sx, Sz, Sxp, Szp = get_sigmas_ALSU(energy,L)
     print("Sizes ALS-U L=%f m at E=%f eV: \nSx=%5.3f um \nSz=%5.3f um \nSxp=%5.3f urad \nSzp=%5.3f urad"%
           (L,energy,1e6*Sx,1e6*Sz,1e6*Sxp,1e6*Szp))
+
+    CFh = sr * srp / (Sx * Sxp)
+    print(sr * srp * 2 * numpy.pi,  codata.h * codata.c / codata.e / energy)
+    print("CF (horizontal) at E=%f eV is %f" % (energy, CFh))
