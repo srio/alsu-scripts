@@ -135,6 +135,37 @@ def func_ellipse_heights_xianbo(x1, S1, S2, TH, hshift=0.0, vshift=0.0): # OFFSE
 
     return y+vshift
 
+def func_ellipse_heights_mckinney(x1, p, q, theta, upto=10):
+    # MacLaurin expansion of ellipse. Eq after https://doi.org/10.1117/12.894175
+
+    x = -x1 # mcKinney uses upper part of the ellipse, x is reversed
+    c = numpy.sin(theta) # cos of angle measured to the normal
+    s = numpy.cos(theta)
+    u = s * (1/p - 1/q)
+    v = 1 / p / q
+
+    a = numpy.zeros(11)
+
+    a[0] = 0.0
+    a[1] = 0.0
+    a[2] = (1/p + 1/q) * c / 4
+    a[3] = a[2] * u / 2
+    a[4] = a[2] * ( 5/16 * u**2 + 1/4 * v)
+    a[5] = a[3] * ( 7/16 * u**2 + 3/4 * v)
+    a[6] = a[2] * ( 21/128 * u**4 + 7/16 * u**2 * v + 1/8 * v**2)
+    a[7] = a[3] * ( 33/128 * u**4 + 15/16 * u**2 * v + 5/8 * v**2)
+    a[8] = a[2] * ( 429/4096 * u**6 + 495/1024 * u**4 * v + 135/256 * u**2 * v**2 + 5/64 * v**2)
+    a[9] = a[3] * ( 715/4096 * u**6 + 1001/1024 * u**4 * v + 385/256 * u**2 * v**2 + 35/64 * v**2)
+    a[10] = a[2] * ( 2431/32768 * u**8 + 1001/2048 * u**6 * v + 1001/1024 * u**4 * v**2 + 77/128 * u**2 * v**2 + 35/128 * v**4)
+
+    tot = x * 0.0
+
+    for i in range(upto + 1):
+        tot += a[i] * x**i
+
+    return tot
+    # return a2 * x**2 + a3 * x**3 + a4 * x**4 + a5 * x**5 + a6 * x**6 + a7 * x**7 + a8 * x**8 + a9 * x**9 + a10 * x**10
+
 
 if __name__ == "__main__":
     p = 10.0
@@ -146,6 +177,7 @@ if __name__ == "__main__":
     print("result eq SHADOW+Manolo    ", func_ellipse(x, p, q, theta))
     print("result eq Amparo Rommeveaux", func_ellipse_heights_amparo(x, p, q, theta))
     print("result eq Xianbo           ", func_ellipse_heights_xianbo(x, p, q, theta))
+    print("result eq McKinney         ", func_ellipse_heights_mckinney(x, p, q, theta))
 
     # result eq Ken               0.003073887585011368
     # result eq SHADOW+Manolo     0.003073887585011367
@@ -153,10 +185,16 @@ if __name__ == "__main__":
     # result eq Xianbo            0.0030739067156503787
 
 
-    # x = numpy.linspace(-1.0, 1.0, 100)
-    # from srxraylib.plot.gol import plot, set_qt
-    # set_qt()
+    x = numpy.linspace(-1.0, 1.0, 1000)
+    from srxraylib.plot.gol import plot, set_qt
+    set_qt()
     # plot(x, ken_equation(x, p, q, theta),
-    #      x, func_ellipse(x, p, q, theta), legend=["ken", "manolo"])
-    #
-    # print("Max diff: ", (numpy.abs(ken_equation(x, p, q, theta) - func_ellipse(x, p, q, theta))).max() )
+    #      x, func_ellipse_heights_mckinney(x, p, q, theta), legend=["ken", "mckinney"])
+
+    plot(x, numpy.abs(ken_equation(x, p, q, theta) - func_ellipse_heights_mckinney(x, p, q, theta, upto=10)),
+         x, numpy.abs(ken_equation(x, p, q, theta) - func_ellipse_heights_mckinney(x, p, q, theta, upto=9)),
+         x, numpy.abs(ken_equation(x, p, q, theta) - func_ellipse_heights_mckinney(x, p, q, theta, upto=8)),
+         x, numpy.abs(ken_equation(x, p, q, theta) - func_ellipse_heights_mckinney(x, p, q, theta, upto=7)),
+         legend=["up to 10", "9", "8", "7"], ytitle="|ken-mckinney|", ylog=1)
+
+    print("Max diff: ", (numpy.abs(ken_equation(x, p, q, theta) - func_ellipse(x, p, q, theta))).max() )
